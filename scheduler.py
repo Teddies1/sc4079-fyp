@@ -1,7 +1,3 @@
-def main():
-    print("bear")
-    
-    
 '''
 A job request contains the number of tasks to be
 launched and the amount of resource required to execute each task.
@@ -26,7 +22,7 @@ based on task runtime estimates provided by a Runtime Estimator.
 '''
 
 '''
-SCALER
+PACKER
 The primary objective of Stratus is to minimize
 the cloud bill of the VC, which is driven mostly by the amount
 of resource-time (e.g., VCore-hours) purchased to complete the
@@ -72,4 +68,24 @@ notes:
 - from vmType table, we can obtain the remaining resources (core, memory) by 
     mapping the row's vmTypeID to vm table's vmTypeID to obtain core and memory
 - instance in this case refers to vmTypeID(???)
+'''
+
+'''
+SCALER
+When Stratus does not have enough instances to accommodate all
+tasks in a scheduling event, it scales out immediately and acquires
+new instances for the unscheduled tasks.
+
+It decides on a new
+instance to acquire at the end of each iteration, assigns unscheduled
+tasks to the instance, and continues until each unscheduled task is
+assigned to some new instance.
+
+Candidate task groups. Candidate task groups are constructed
+so that the ith group contains the first i tasks in the list sorted in
+descending runtime order. The first group contains the longest task,
+the second group contains the two longest tasks, and so on. The
+scaler continues to build candidate task groups until the aggregate
+resource request of the largest task group exceeds that of the largest
+allowed instance type.
 '''
