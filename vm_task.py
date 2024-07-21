@@ -4,6 +4,7 @@ class Task:
     start_time: float
     end_time: float
     priority: int
+    running: bool = False
     
     def __init__(self, task_id: int, vm_type_id: int, start_time: float, end_time: float, priority: int) -> None:
         self.task_id = task_id
