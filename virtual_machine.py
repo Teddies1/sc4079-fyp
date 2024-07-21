@@ -1,5 +1,5 @@
 from vm_task import Task
-
+from physical_machine import Machine
 
 class VirtualMachine:
     vm_type_id: int
@@ -12,7 +12,10 @@ class VirtualMachine:
         self.requested_core = requested_core
         self.requested_memory = requested_memory
         self.list_of_tasks = list_of_tasks
-        
+       
+    def add_instance(self, virtual_machine):
+        pass
         
     
-        
+    def remove_instance():
+        pass

@@ -14,4 +14,3 @@ def get_collated_data(query):
     return results
 
 res = get_collated_data(query)
-print(res)
