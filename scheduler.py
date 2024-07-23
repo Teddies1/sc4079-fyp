@@ -1,9 +1,11 @@
 from virtual_machine import VirtualMachine
 from vm_task import Task
 from physical_machine import Machine
-from orm import get_collated_data
 
 import math
+import csv
+import time
+import pandas as pd
 
 class Scheduler():
     
@@ -15,21 +17,34 @@ class Scheduler():
     memory_usage: float
     task_queue: list[Task]
     
-    def __init__(self, machine: Machine, machine_id: int=16) -> None:
-        self.machine_id = machine_id
+    
+    def __init__(self, machine: Machine) -> None:
+        self.machine = machine
+        self.machine_id = machine.machine_id
         self.core_capacity = machine.cpu
         self.memory_capacity = machine.memory
         self.task_queue = []
-        self.machine = machine
+    
+    def load_tasks_to_queue(self):
+        f = open("../outputs/tasklist.csv", 'r')
+        reader = csv.reader(f)
+        next(reader)
         
+        for row in reader:
+            task = Task(int(row[0]), int(row[2]), float(row[5]), float(row[3]), float(row[4]))
+            self.task_queue.append(task)
+            
     def generate_bins(self):
         self.bins = [[] for _ in range(5)]
         
-    def obtain_bin_index(self, runtime):
+    def obtain_bin_index(self, bins, runtime):
         # [0, 1), [1, 2), [2, 4), [4, 8), [8, 16)
+        if runtime < 1:
+            return 0
+        
         bin_index = math.floor(math.log(runtime, 2)) + 1
-        if bin_index > len(self.runtime_bins) - 1:
-            bin_index = len(self.runtime_bins) - 1
+        if bin_index > len(bins) - 1:
+            bin_index = len(bins) - 1
         return bin_index
     
     
@@ -88,11 +103,15 @@ class Scheduler():
     
 
 def main():
-    query = 'select vm.vmId as taskId, vm.tenantId, vm.vmTypeId, vm.starttime, vm.endtime, (vm.endtime - vm.starttime) as runtime, vmType.core as requested_core, vmType.memory as requested_memory from vm, vmType where vm.vmTypeId = vmType.vmTypeId and endtime <= 14 and machineId = 16;'
-    path = 'sqlite:///../db/azure_packing_trace.db'
-    dataframe = get_collated_data(query, path)
+    machine = Machine(16)
+    sched = Scheduler(machine)
+    sched.generate_bins()
+    sched.load_tasks_to_queue()
     
-    print(dataframe.head(10))
-    print(len(dataframe))
+    for row in sched.task_queue:    
+        if (row.runtime >= 1):
+            print(sched.obtain_bin_index(sched.bins, row.runtime))
     
-main()
+    
+if __name__ == "__main__":
+    main()
