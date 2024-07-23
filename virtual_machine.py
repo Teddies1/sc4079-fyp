@@ -9,12 +9,13 @@ class VirtualMachine:
     list_of_tasks: list[Task]
     
     def __init__(self, machine: Machine, vm_type_id: int, requested_core: float, requested_memory: float) -> None:
+        self.machine = machine
         self.vm_type_id = vm_type_id
         self.requested_core = requested_core
         self.requested_memory = requested_memory
         self.list_of_tasks = []
         
-       
+        
     def add_instance(self, virtual_machine):
         pass
         
