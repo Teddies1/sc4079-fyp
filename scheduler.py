@@ -24,32 +24,30 @@ class Scheduler():
         self.core_capacity = machine.cpu
         self.memory_capacity = machine.memory
         self.task_queue = []
-    
-    # def load_tasks_to_queue(self):
-    #     f = open("../outputs/tasklist.csv", 'r')
-    #     reader = csv.reader(f)
-    #     next(reader)
-        
-    #     for row in reader:
-    #         task = Task(int(row[0]), int(row[2]), float(row[5]), float(row[3]), float(row[4]))
-    #         self.task_queue.append(task)
+        self.task_bins = [[] for _ in range(5)]
+        self.instance_bins = [[] for _ in range(5)]
     
     def load_tasks_to_bins(self):
         f = open("../outputs/tasklist.csv", 'r')
         reader = csv.reader(f)
         next(reader)
-        
-        self.generate_bins()
+        print(self.task_bins)
         for row in reader:
             task = Task(int(row[0]), int(row[2]), float(row[5]), float(row[3]), float(row[4]))
             index = self.obtain_bin_index(self.task_bins, task.runtime)
             self.task_bins[index].append(task)
             
     def load_vms_to_bins(self):
-        pass
-    
-    def generate_bins(self):
-        self.task_bins = [[] for _ in range(5)]
+        f = open("../outputs/tasklist.csv", 'r')
+        reader = csv.reader(f)
+        next(reader)
+        
+        '''
+        Similarly,
+        an instance is assigned to a bin according to the remaining
+        runtime of the instance, which is the longest remaining runtime of
+        the tasks assigned to the instance.
+        '''
         
     def obtain_bin_index(self, bins, runtime):
         # [0, 1), [1, 2), [2, 4), [4, 8), [8, 16)
@@ -60,14 +58,7 @@ class Scheduler():
         if bin_index > len(bins) - 1:
             bin_index = len(bins) - 1
         return bin_index
-    
-    def load_instances_to_bins(self):
-        '''
-        Similarly,
-        an instance is assigned to a bin according to the remaining
-        runtime of the instance, which is the longest remaining runtime of
-        the tasks assigned to the instance.
-        '''
+        
     
     def packer(self, task_queue, bins):
         '''
@@ -133,12 +124,8 @@ class Scheduler():
 def main():
     machine = Machine(16)
     sched = Scheduler(machine)
-    sched.generate_bins()
     sched.load_tasks_to_bins()
     
-    # for row in sched.task_queue:    
-    #     if (row.runtime >= 1):
-    #         print(sched.obtain_bin_index(sched.bins, row.runtime))
     for bin in sched.task_bins:
         print(len(bin))
     
