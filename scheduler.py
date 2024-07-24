@@ -41,14 +41,17 @@ class Scheduler():
         f = open("../outputs/tasklist.csv", 'r')
         reader = csv.reader(f)
         next(reader)
-        
         '''
         Similarly,
         an instance is assigned to a bin according to the remaining
         runtime of the instance, which is the longest remaining runtime of
         the tasks assigned to the instance.
         '''
-        
+        for row in reader:
+            instance = VirtualMachine(int(row[2]), float(row[6]), float(row[7]), float(row[5]))
+            index = self.obtain_bin_index(self.instance_bins, instance.runtime)
+            self.instance_bins[index].append(instance)
+            
     def obtain_bin_index(self, bins, runtime):
         # [0, 1), [1, 2), [2, 4), [4, 8), [8, 16)
         if runtime < 1:
@@ -122,6 +125,12 @@ class Scheduler():
     
 
 def main():
+    '''
+    It simulates
+    instance allocation and job placement decisions made by evaluated
+    schedulers (Sec. 4.3), advancing simulation time as jobs arrive and
+    complete.
+    '''
     machine = Machine(16)
     sched = Scheduler(machine)
     sched.load_tasks_to_bins()
