@@ -40,12 +40,14 @@ class Scheduler():
         next(reader)
         
         self.generate_bins()
-        print(self.task_bins)
         for row in reader:
             task = Task(int(row[0]), int(row[2]), float(row[5]), float(row[3]), float(row[4]))
             index = self.obtain_bin_index(self.task_bins, task.runtime)
             self.task_bins[index].append(task)
             
+    def load_vms_to_bins(self):
+        pass
+    
     def generate_bins(self):
         self.task_bins = [[] for _ in range(5)]
         
