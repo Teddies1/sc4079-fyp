@@ -9,13 +9,13 @@ import pandas as pd
 
 class Scheduler():
     
-    bins: list[list[VirtualMachine]]
     machine: Machine
     core_capacity: float
     memory_capacity: float
     cpu_usage: float
     memory_usage: float
-    task_queue: list[Task]
+    task_bins: list[list[Task]]
+    instance_bins: list[list[VirtualMachine]]
     
     
     def __init__(self, machine: Machine) -> None:
@@ -25,17 +25,29 @@ class Scheduler():
         self.memory_capacity = machine.memory
         self.task_queue = []
     
-    def load_tasks_to_queue(self):
+    # def load_tasks_to_queue(self):
+    #     f = open("../outputs/tasklist.csv", 'r')
+    #     reader = csv.reader(f)
+    #     next(reader)
+        
+    #     for row in reader:
+    #         task = Task(int(row[0]), int(row[2]), float(row[5]), float(row[3]), float(row[4]))
+    #         self.task_queue.append(task)
+    
+    def load_tasks_to_bins(self):
         f = open("../outputs/tasklist.csv", 'r')
         reader = csv.reader(f)
         next(reader)
         
+        self.generate_bins()
+        print(self.task_bins)
         for row in reader:
             task = Task(int(row[0]), int(row[2]), float(row[5]), float(row[3]), float(row[4]))
-            self.task_queue.append(task)
+            index = self.obtain_bin_index(self.task_bins, task.runtime)
+            self.task_bins[index].append(task)
             
     def generate_bins(self):
-        self.bins = [[] for _ in range(5)]
+        self.task_bins = [[] for _ in range(5)]
         
     def obtain_bin_index(self, bins, runtime):
         # [0, 1), [1, 2), [2, 4), [4, 8), [8, 16)
@@ -47,8 +59,15 @@ class Scheduler():
             bin_index = len(bins) - 1
         return bin_index
     
+    def load_instances_to_bins(self):
+        '''
+        Similarly,
+        an instance is assigned to a bin according to the remaining
+        runtime of the instance, which is the longest remaining runtime of
+        the tasks assigned to the instance.
+        '''
     
-    def packing(self, task_queue, bins):
+    def packer(self, task_queue, bins):
         '''
         sort the unscheduled tasks based on the runtime descending
         
@@ -99,19 +118,27 @@ class Scheduler():
         update the instance bin index according to the current timestamp\
         '''
     
-    
+        '''
+        Algorithm description. At the beginning of a scheduling
+        event, the packer organizes tasks and instances into their appropriate
+        bins. Tasks are then considered for placement in descending
+        order by runtime—longest task first. For each task, the Packer
+        attempts to assign it to an available instance in two phases: the
+        up-packing phase and the down-packing phase.
+        '''
     
 
 def main():
     machine = Machine(16)
     sched = Scheduler(machine)
     sched.generate_bins()
-    sched.load_tasks_to_queue()
+    sched.load_tasks_to_bins()
     
-    for row in sched.task_queue:    
-        if (row.runtime >= 1):
-            print(sched.obtain_bin_index(sched.bins, row.runtime))
-    
+    # for row in sched.task_queue:    
+    #     if (row.runtime >= 1):
+    #         print(sched.obtain_bin_index(sched.bins, row.runtime))
+    for bin in sched.task_bins:
+        print(len(bin))
     
 if __name__ == "__main__":
     main()
