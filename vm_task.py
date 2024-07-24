@@ -5,6 +5,7 @@ class Task:
     start_time: float
     end_time: float
     runtime: float
+    
     running: bool = False
     
     def __init__(self, task_id: int, vm_type_id: int, runtime: float, start_time: float, end_time: float) -> None:
