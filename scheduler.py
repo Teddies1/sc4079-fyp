@@ -38,7 +38,7 @@ class Scheduler():
             self.task_bins[index].append(task)
             
     def load_vms_to_bins(self):
-        f = open("../outputs/tasklist.csv", 'r')
+        f = open("../outputs/vmlist.csv", 'r')
         reader = csv.reader(f)
         next(reader)
         '''
@@ -48,7 +48,7 @@ class Scheduler():
         the tasks assigned to the instance.
         '''
         for row in reader:
-            instance = VirtualMachine(int(row[2]), float(row[6]), float(row[7]), float(row[5]))
+            instance = VirtualMachine(int(row[0]), float(row[3]), float(row[4]), float(row[2]))
             index = self.obtain_bin_index(self.instance_bins, instance.runtime)
             self.instance_bins[index].append(instance)
             
@@ -134,8 +134,12 @@ def main():
     machine = Machine(16)
     sched = Scheduler(machine)
     sched.load_tasks_to_bins()
+    sched.load_vms_to_bins()
     
     for bin in sched.task_bins:
+        print(len(bin))
+        
+    for bin in sched.instance_bins:
         print(len(bin))
     
 if __name__ == "__main__":
