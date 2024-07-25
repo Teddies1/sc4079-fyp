@@ -16,7 +16,7 @@ class Scheduler():
     memory_usage: float
     task_bins: list[list[Task]]
     instance_bins: list[list[VirtualMachine]]
-    
+    vm_types: pd.DataFrame
     
     def __init__(self, machine: Machine) -> None:
         self.machine = machine
@@ -26,7 +26,8 @@ class Scheduler():
         self.task_queue = []
         self.task_bins = [[] for _ in range(5)]
         self.instance_bins = [[] for _ in range(5)]
-    
+        self.vm_types = pd.read_csv("../outputs/vmlist.csv")
+        
     def load_tasks_to_bins(self):
         f = open("../outputs/tasklist.csv", 'r')
         reader = csv.reader(f)
@@ -38,7 +39,7 @@ class Scheduler():
             self.task_bins[index].append(task)
             
     def load_vms_to_bins(self):
-        f = open("../outputs/vmlist.csv", 'r')
+        f = open("../outputs/assignedinstancelist.csv", 'r')
         reader = csv.reader(f)
         next(reader)
         '''
@@ -48,7 +49,7 @@ class Scheduler():
         the tasks assigned to the instance.
         '''
         for row in reader:
-            instance = VirtualMachine(int(row[0]), float(row[3]), float(row[4]), float(row[2]))
+            instance = VirtualMachine(int(row[0]), float(row[5]), float(row[6]), float(row[2]), float(row[3]), float(row[4]))
             index = self.obtain_bin_index(self.instance_bins, instance.runtime)
             self.instance_bins[index].append(instance)
             
@@ -62,7 +63,6 @@ class Scheduler():
             bin_index = len(bins) - 1
         return bin_index
         
-    
     def packer(self, task_queue, bins):
         '''
         sort the unscheduled tasks based on the runtime descending
@@ -123,7 +123,6 @@ class Scheduler():
         up-packing phase and the down-packing phase.
         '''
     
-
 def main():
     '''
     It simulates
@@ -136,11 +135,13 @@ def main():
     sched.load_tasks_to_bins()
     sched.load_vms_to_bins()
     
-    for bin in sched.task_bins:
-        print(len(bin))
+    # for bin in sched.task_bins:
+    #     print(len(bin))
         
-    for bin in sched.instance_bins:
-        print(len(bin))
+    # for bin in sched.instance_bins:
+    #     print(len(bin))
+
+    print(sched.vm_types)    
     
 if __name__ == "__main__":
     main()
