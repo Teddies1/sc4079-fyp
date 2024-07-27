@@ -10,13 +10,19 @@ import pandas as pd
 class Scheduler():
     
     machine: Machine
+    
     core_capacity: float
     memory_capacity: float
     cpu_usage: float
     memory_usage: float
+    
     task_bins: list[list[Task]]
     instance_bins: list[list[VirtualMachine]]
+    
+    task_queue: list[Task]
+    
     vm_types: pd.DataFrame
+    no_of_bins = math.floor(math.log(1209600, 2)) + 1
     
     def __init__(self, machine: Machine) -> None:
         self.machine = machine
@@ -24,31 +30,26 @@ class Scheduler():
         self.core_capacity = machine.cpu
         self.memory_capacity = machine.memory
         self.task_queue = []
-        self.task_bins = [[] for _ in range(5)]
-        self.instance_bins = [[] for _ in range(5)]
-        self.vm_types = pd.read_csv("../outputs/vmlist.csv")
+        self.task_bins = [[] for _ in range(self.no_of_bins)]
+        self.instance_bins = [[] for _ in range(self.no_of_bins)]
+        self.vm_types = pd.read_csv("../outputs/vmlist2.csv")
         
-    def load_tasks_to_bins(self):
-        f = open("../outputs/tasklist.csv", 'r')
-        reader = csv.reader(f)
-        next(reader)
-        print(self.task_bins)
-        for row in reader:
+    def load_tasks_to_bins(self, list_of_tasks):
+        # f = open("../outputs/tasklist2.csv", 'r')
+        # reader = csv.reader(f)
+        # next(reader)
+        # print(self.task_bins)
+        for row in list_of_tasks:
             task = Task(int(row[0]), int(row[2]), float(row[5]), float(row[3]), float(row[4]))
             index = self.obtain_bin_index(self.task_bins, task.runtime)
             self.task_bins[index].append(task)
             
-    def load_vms_to_bins(self):
-        f = open("../outputs/assignedinstancelist.csv", 'r')
-        reader = csv.reader(f)
-        next(reader)
-        '''
-        Similarly,
-        an instance is assigned to a bin according to the remaining
-        runtime of the instance, which is the longest remaining runtime of
-        the tasks assigned to the instance.
-        '''
-        for row in reader:
+    def load_vms_to_bins(self, list_of_vms):
+        # f = open("../outputs/assignedinstancelist2.csv", 'r')
+        # reader = csv.reader(f)
+        # next(reader)
+         
+        for row in list_of_vms:
             instance = VirtualMachine(int(row[0]), float(row[5]), float(row[6]), float(row[2]), float(row[3]), float(row[4]))
             index = self.obtain_bin_index(self.instance_bins, instance.runtime)
             self.instance_bins[index].append(instance)
@@ -63,29 +64,45 @@ class Scheduler():
             bin_index = len(bins) - 1
         return bin_index
         
-    def packer(self, task_queue, bins):
-        '''
-        sort the unscheduled tasks based on the runtime descending
+    def packer(self, list_of_tasks, list_of_vms, task_bins: list[list[Task]], instance_bins:list[list[VirtualMachine]]):
+        list_of_tasks.sort(key=lambda x: x.runtime, reverse=True)
+        max_runtime_index = self.obtain_bin_index(task_bins, list_of_tasks[0].runtime)
         
-        iterate unscheduled tasks
-        eligible instances  check if any instance with same bin is eligible to take the task
-        if eligible instances not empty
-            assign the task to the instance with remaining runtime closest to the task with the same vmTypeId
-            add task’s requested CPU and memory to memory capacity
-        else
-            uppack_eligible_instances  check if any instance with greater bins is eligible
-            
-        if uppack_eligible_instances not empty
-            assign to the instance with most available resources
-            add task’s requested CPU and memory to memory capacity
-        else
-            downppack_elgible_instances  check if any lower bins instance is eligible
-        if downpack_eligible_instances not empty
-            assign to the instance with most available resources
-            add task’s requested CPU and memory to memory capacity
-        '''
+        #sort the unscheduled tasks based on the runtime descending
+        self.load_tasks_to_bins(list_of_tasks)
+        self.load_vms_to_bins(list_of_vms)
+        #iterate unscheduled tasks
+        for task in task_bins[max_runtime_index]:
+            #eligible instances  check if any instance with same bin is eligible to take the task
+            count = 0
+            for instance in instance_bins[max_runtime_index]:
+                if instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity:
+                    count += 1
+            #if eligible instances not empty
+            if count > 0:
+                #assign the task to the instance with remaining runtime closest to the task with the same vmTypeId
+                task_runtime = task.runtime
+                for instance in instance_bins[max_runtime_index]:
+                    if instance.runtime == task_runtime or math.isclose(instance.runtime, task_runtime):
+                        instance.list_of_tasks.append(task)
+                #add task’s requested CPU and memory to memory capacity
+                self.core_capacity -= instance.requested_core
+                self.memory_capacity -= instance.requested_memory
+            #else
+            else:
+                #uppack_eligible_instances  check if any instance with greater bins is eligible
+
+                #if uppack_eligible_instances not empty
+                    #assign to the instance with most available resources
+                    #add task’s requested CPU and memory to memory capacity
+                #else
+                    #downppack_elgible_instances  check if any lower bins instance is eligible
+                    #if downpack_eligible_instances not empty
+                        #assign to the instance with most available resources
+                        #add task’s requested CPU and memory to memory capacity
         
-    def scaling(self, task_queue, bins):
+        
+    def scaling(self, task_bins, instance_bins):
         '''
         Input Task Bins, Instance Bins, Unscheduled Tasks
         Output -
@@ -98,11 +115,9 @@ class Scheduler():
         
         '''
     
-    def schedule(self, timestamp):
+    def free_tasks(self, timestamp):
         '''
         Algorithm 1: Free Tasks and Instances at Current Timestamp
-        Input Current Timestamp
-        Output -
         expired tasks  check if any task in the task bins has expired
         iterate expired tasks
         deduct the CPU used in the instance where the task is assigned
@@ -113,35 +128,27 @@ class Scheduler():
         iterate instance bins
         update the instance bin index according to the current timestamp\
         '''
-    
-        '''
-        Algorithm description. At the beginning of a scheduling
-        event, the packer organizes tasks and instances into their appropriate
-        bins. Tasks are then considered for placement in descending
-        order by runtime—longest task first. For each task, the Packer
-        attempts to assign it to an available instance in two phases: the
-        up-packing phase and the down-packing phase.
-        '''
-    
+        
+    def stratus():
+        pass
+        
 def main():
     '''
     It simulates
     instance allocation and job placement decisions made by evaluated
     schedulers (Sec. 4.3), advancing simulation time as jobs arrive and
     complete.
+    
+    Pending tasks are
+    scheduled in batches during a periodic scheduling event; the frequency
+    of the scheduling event is configurable.
     '''
+    
     machine = Machine(16)
     sched = Scheduler(machine)
     sched.load_tasks_to_bins()
     sched.load_vms_to_bins()
     
-    # for bin in sched.task_bins:
-    #     print(len(bin))
-        
-    # for bin in sched.instance_bins:
-    #     print(len(bin))
-
-    print(sched.vm_types)    
     
 if __name__ == "__main__":
     main()
