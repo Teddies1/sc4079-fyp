@@ -64,10 +64,10 @@ class Scheduler():
             bin_index = len(bins) - 1
         return bin_index
         
-    def packer(self, list_of_tasks, list_of_vms, task_bins: list[list[Task]], instance_bins:list[list[VirtualMachine]]):
+    def packer(self, list_of_tasks: list[Task], list_of_vms, task_bins: list[list[Task]], instance_bins:list[list[VirtualMachine]]):
         list_of_tasks.sort(key=lambda x: x.runtime, reverse=True)
         max_runtime_index = self.obtain_bin_index(task_bins, list_of_tasks[0].runtime)
-        
+        count = 0
         #sort the unscheduled tasks based on the runtime descending
         self.load_tasks_to_bins(list_of_tasks)
         self.load_vms_to_bins(list_of_vms)
@@ -84,23 +84,62 @@ class Scheduler():
                 task_runtime = task.runtime
                 for instance in instance_bins[max_runtime_index]:
                     if instance.runtime == task_runtime or math.isclose(instance.runtime, task_runtime):
-                        instance.list_of_tasks.append(task)
-                #add task’s requested CPU and memory to memory capacity
-                self.core_capacity -= instance.requested_core
-                self.memory_capacity -= instance.requested_memory
+                        if instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity:
+                            task.assigned = True
+                            instance.list_of_tasks.append(task)
+                            #add task’s requested CPU and memory to memory capacity
+                            self.core_capacity -= instance.requested_core
+                            self.memory_capacity -= instance.requested_memory
+                            break
             #else
             else:
+                uppack_index = max_runtime_index
                 #uppack_eligible_instances  check if any instance with greater bins is eligible
-
-                #if uppack_eligible_instances not empty
-                    #assign to the instance with most available resources
-                    #add task’s requested CPU and memory to memory capacity
-                #else
-                    #downppack_elgible_instances  check if any lower bins instance is eligible
-                    #if downpack_eligible_instances not empty
+                while uppack_index < len(task_bins):
+                    uppack_index += 1
+                    count = 0
+                    for instance in instance_bins[uppack_index]:
+                        if instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity:
+                            count += 1
+                    #if uppack_eligible_instances not empty
+                    if count > 0:
                         #assign to the instance with most available resources
-                        #add task’s requested CPU and memory to memory capacity
-        
+                        resource_sorted_instance_list = sorted(instance_bins[uppack_index], key=lambda x: (x.requested_core, x.requested_memory), reverse=True)
+                        for instance in resource_sorted_instance_list:
+                            if instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity:
+                                task.assigned = True
+                                instance.list_of_tasks.append(task)
+                                #add task’s requested CPU and memory to memory capacity
+                                self.core_capacity -= instance.requested_core
+                                self.memory_capacity -= instance.requested_memory
+                                break
+                #else
+                if task.assigned == False:
+                    #downppack_elgible_instances  check if any lower bins instance is eligible'
+                    downpack_index = max_runtime_index
+                    while downpack_index >= 0:
+                        downpack_index -= 1
+                        count = 0
+                        for instance in instance_bins[downpack_index]:
+                            if instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity:
+                                count += 1
+                        #if downpack_eligible_instances not empty
+                        if count > 0:
+                            promoted_index = 0
+                            resource_sorted_instance_list = sorted(instance_bins[downpack_index], key=lambda x: (x.requested_core, x.requested_memory), reverse=True)
+                            for instance, index in enumerate(resource_sorted_instance_list):
+                                if instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity:
+                                #assign to the instance with most available resources
+                                    task.assigned = True
+                                    instance.list_of_tasks.append(task)
+                                    #add task’s requested CPU and memory to memory capacity
+                                    self.core_capacity -= instance.requested_core
+                                    self.memory_capacity -= instance.requested_memory
+                                    promoted_index = index
+                            instance_bins[downpack_index].sort(key=lambda x: (x.requested_core, x.requested_memory), reverse=True)
+                            promoted_instance = instance_bins[downpack_index].pop(promoted_index)
+                            instance_bins[max_runtime_index].append(promoted_instance)
+                        
         
     def scaling(self, task_bins, instance_bins):
         '''
