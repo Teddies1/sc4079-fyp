@@ -127,7 +127,7 @@ class Scheduler():
                         if count > 0:
                             promoted_index = 0
                             resource_sorted_instance_list = sorted(instance_bins[downpack_index], key=lambda x: (x.requested_core, x.requested_memory), reverse=True)
-                            for instance, index in enumerate(resource_sorted_instance_list):
+                            for index, instance in enumerate(resource_sorted_instance_list):
                                 if instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity:
                                 #assign to the instance with most available resources
                                     task.assigned = True
