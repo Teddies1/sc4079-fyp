@@ -57,7 +57,7 @@ class Scheduler():
             bin_index = len(bins) - 1
         return bin_index
         
-    def packer(self, list_of_tasks: list[Task], list_of_vms, task_bins: list[list[Task]], instance_bins:list[list[VirtualMachine]]):
+    def packer(self, list_of_tasks, list_of_vms, task_bins: list[list[Task]], instance_bins:list[list[VirtualMachine]]):
         list_of_tasks.sort(key=lambda x: float(x[5]), reverse=True)
         max_runtime_index = self.obtain_bin_index(task_bins, list_of_tasks[0][5])
         count = 0
@@ -148,12 +148,9 @@ class Scheduler():
                                 instance_bins[max_runtime_index].append(promoted_instance)
                             downpack_index -= 1
         
-        for bin in self.task_bins:
-            for task in bin:
-                print(task.assigned)
-        print(self.core_capacity, self.memory_capacity)
+
         
-    def scaling(self, task_bins, instance_bins):
+    def scaling(self, task_bins: list[list[Task]], instance_bins: list[list[VirtualMachine]]):
         '''
         Input Task Bins, Instance Bins, Unscheduled Tasks
         Output -
@@ -165,6 +162,23 @@ class Scheduler():
             acquire new instance based on the instance type and assign tasks in candidate group
         
         '''
+        group_size = 1
+        
+        for i in range(len(task_bins)-1 , -1, -1):
+            candidate_groups = []
+            if len(task_bins[i]) > 0:    
+                group_list = []
+                for task in task_bins[i]:
+                    if task.assigned == False:
+                        if group_list <= group_size:
+                            group_list.append(task)
+                        else:
+                            candidate_groups.append(group_list)
+                            group_list = []
+                            group_size += 1
+                            group_list.append(task)
+
+    
 
     def free_expired_tasks_and_instances(self, timestamp):
         # expired tasks  check if any task in the task bins has expired
