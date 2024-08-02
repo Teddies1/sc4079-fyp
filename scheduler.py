@@ -82,12 +82,13 @@ class Scheduler():
                     task_runtime = task.runtime
                     for instance in instance_bins[max_runtime_index]:
                         if task.assigned == False and (instance.runtime == task_runtime or math.isclose(instance.runtime, task_runtime)):
-                            if task.requested_core <= self.core_capacity and task.requested_memory <= self.memory_capacity:
+                            if instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity:
                                 print("sucessfully assigned task to instance")
                                 task.assigned = True
                                 #add task’s requested CPU and memory to memory capacity
-                                self.core_capacity -= task.requested_core
-                                self.memory_capacity -= task.requested_memory 
+                                if len(instance.list_of_tasks) == 0:
+                                    self.core_capacity -= task.requested_core
+                                    self.memory_capacity -= task.requested_memory 
                                 instance.list_of_tasks.append(task)
                                 print("current core and memory capacity is: ", self.core_capacity, self.memory_capacity)
                                 break
@@ -107,12 +108,13 @@ class Scheduler():
                             #assign to the instance with most available resources
                             resource_sorted_instance_list = sorted(instance_bins[uppack_index], key=lambda x: (float(x.requested_core), float(x.requested_memory)), reverse=True)
                             for instance in resource_sorted_instance_list:
-                                if task.assigned == False and task.requested_core <= self.core_capacity and task.requested_memory <= self.memory_capacity:
+                                if task.assigned == False and instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity:
                                     print("uppacking assignment successful")
                                     task.assigned = True
                                     #add task’s requested CPU and memory to memory capacity
-                                    self.core_capacity -= task.requested_core
-                                    self.memory_capacity -= task.requested_memory
+                                    if len(instance.list_of_tasks) == 0:
+                                        self.core_capacity -= task.requested_core
+                                        self.memory_capacity -= task.requested_memory
                                     instance.list_of_tasks.append(task)
                                     print("current core and memory capacity after uppacking is: ", self.core_capacity, self.memory_capacity)
                                     break
@@ -133,13 +135,14 @@ class Scheduler():
                                 promoted_index = 0
                                 resource_sorted_instance_list = sorted(instance_bins[downpack_index], key=lambda x: (float(x.requested_core), float(x.requested_memory)), reverse=True)
                                 for index, instance in enumerate(resource_sorted_instance_list):
-                                    if task.assigned == False and task.requested_core <= self.core_capacity and task.requested_memory <= self.memory_capacity:
+                                    if task.assigned == False and instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity:
                                     #assign to the instance with most available resources
                                         print("downpacking assignment successful")
                                         task.assigned = True
                                         #add task’s requested CPU and memory to memory capacity
-                                        self.core_capacity -= task.requested_core
-                                        self.memory_capacity -= task.requested_memory
+                                        if len(instance.list_of_tasks) == 0:
+                                            self.core_capacity -= task.requested_core
+                                            self.memory_capacity -= task.requested_memory
                                         instance.list_of_tasks.append(task)
                                         promoted_index = index
                                         print("current core and memory capacity after downpacking is: ", self.core_capacity, self.memory_capacity)
@@ -148,7 +151,9 @@ class Scheduler():
                                 instance_bins[max_runtime_index].append(promoted_instance)
                             downpack_index -= 1
         
-
+        for bin in self.task_bins:
+            for task in bin:
+                print(task.assigned)
         
     def scaling(self, task_bins: list[list[Task]], instance_bins: list[list[VirtualMachine]]):
         '''
@@ -178,7 +183,7 @@ class Scheduler():
                             group_size += 1
                             group_list.append(task)
 
-    
+        
 
     def free_expired_tasks_and_instances(self, timestamp):
         # expired tasks  check if any task in the task bins has expired
@@ -240,12 +245,14 @@ def main():
     for row in taskreader:
         if float(row[3]) <= 10:
             tasklist.append(row)
+            
     for row in instancereader:
         if float(row[2]) <= 10:
             instancelist.append(row)
 
     sched.packer(list_of_tasks=tasklist, list_of_vms=instancelist, task_bins=sched.task_bins, instance_bins=sched.instance_bins)    
     
+    # print(sched.vm_types)
     
     
     
