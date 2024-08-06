@@ -81,7 +81,7 @@ class Scheduler():
                     #assign the task to the instance with remaining runtime closest to the task with the same vmTypeId
                     task_runtime = task.runtime
                     for instance in instance_bins[i]:
-                        if task.assigned == False and (instance.runtime == task_runtime or math.isclose(instance.runtime, task_runtime)):
+                        if task.assigned == False and task.runtime <= instance.runtime and (instance.runtime == task_runtime or math.isclose(instance.runtime, task_runtime)):
                             if instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity:
                                 print("sucessfully assigned task to instance")
                                 task.assigned = True
@@ -108,7 +108,7 @@ class Scheduler():
                             #assign to the instance with most available resources
                             resource_sorted_instance_list = sorted(instance_bins[uppack_index], key=lambda x: (float(x.requested_core), float(x.requested_memory)), reverse=True)
                             for instance in resource_sorted_instance_list:
-                                if instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity and task.assigned == False:
+                                if task.runtime <= instance.runtime and instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity and task.assigned == False:
                                     print("uppacking assignment successful")
                                     task.assigned = True
                                     #add task’s requested CPU and memory to memory capacity
@@ -135,7 +135,7 @@ class Scheduler():
                                 promoted_index = 0
                                 resource_sorted_instance_list = sorted(instance_bins[downpack_index], key=lambda x: (float(x.requested_core), float(x.requested_memory)), reverse=True)
                                 for index, instance in enumerate(resource_sorted_instance_list):
-                                    if task.assigned == False and instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity:
+                                    if task.runtime <= instance.runtime and task.assigned == False and instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity:
                                     #assign to the instance with most available resources
                                         print("downpacking assignment successful")
                                         task.assigned = True
@@ -150,9 +150,12 @@ class Scheduler():
                                 promoted_instance = instance_bins[downpack_index].pop(promoted_index)
                                 instance_bins[i].append(promoted_instance)
                             downpack_index -= 1
-        
-        print(self.core_capacity, self.memory_capacity)
-        
+        sum = 0
+        for bin in self.instance_bins:
+            for instance in bin:
+                sum += len(instance.list_of_tasks)
+                print(len(instance.list_of_tasks))
+        print(sum)
     def scaling(self, task_bins: list[list[Task]], instance_bins: list[list[VirtualMachine]]):
         '''
         Input Task Bins, Instance Bins, Unscheduled Tasks
@@ -195,13 +198,14 @@ class Scheduler():
     def free_expired_tasks_and_instances(self, timestamp):
         # expired tasks  check if any task in the task bins has expired
         # iterate expired tasks
-        for bin in self.task_bins:
-            for task in bin:
-                if task.end_time > timestamp:
+        for bin in self.instance_bins:
+            for instance in bin:
+                if instance.endtime > timestamp:
                     # deduct the CPU used in the instance where the task is assigned
-                    self.core_capacity += task.requested_core
+                    self.core_capacity += instance.requested_core
                     # deduct the memory used in the instance where the task is assigned
-                    self.memory_capacity += task.requested_memory
+                    self.memory_capacity += instance.requested_memory
+                    
         # drop expired tasks from the task bins
         for bin in self.task_bins:
             bin[:] = [task for task in bin if task.end_time <= timestamp]
@@ -250,11 +254,11 @@ def main():
     instancelist = []
     
     for row in taskreader:
-        if float(row[3]) <= 20:
+        if float(row[3]) <= 11:
             tasklist.append(row)
             
     for row in instancereader:
-        if float(row[2]) <= 20:
+        if float(row[2]) <= 11:
             instancelist.append(row)
     print(len(tasklist), len(instancelist))
     sched.packer(list_of_tasks=tasklist, list_of_vms=instancelist, task_bins=sched.task_bins, instance_bins=sched.instance_bins)    
