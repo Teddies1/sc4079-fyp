@@ -156,7 +156,7 @@ class Scheduler():
                 sum += len(instance.list_of_tasks)
                 print(len(instance.list_of_tasks))
         print(sum)
-    def scaling(self, task_bins: list[list[Task]], instance_bins: list[list[VirtualMachine]]):
+    def scaling(self):
         '''
         Input Task Bins, Instance Bins, Unscheduled Tasks
         Output -
@@ -168,21 +168,21 @@ class Scheduler():
             acquire new instance based on the instance type and assign tasks in candidate group
         
         '''
-        group_size = 1
+        # group_size = 1
         
-        for i in range(len(task_bins)-1 , -1, -1):
-            candidate_groups = []
-            if len(task_bins[i]) > 0:    
-                group_list = []
-                for task in task_bins[i]:
-                    if task.assigned == False:
-                        if group_list <= group_size:
-                            group_list.append(task)
-                        else:
-                            candidate_groups.append(group_list)
-                            group_list = []
-                            group_size += 1
-                            group_list.append(task)
+        # for i in range(len(task_bins)-1 , -1, -1):
+        #     candidate_groups = []
+        #     if len(task_bins[i]) > 0:    
+        #         group_list = []
+        #         for task in task_bins[i]:
+        #             if task.assigned == False:
+        #                 if group_list <= group_size:
+        #                     group_list.append(task)
+        #                 else:
+        #                     candidate_groups.append(group_list)
+        #                     group_list = []
+        #                     group_size += 1
+        #                     group_list.append(task)
 
         '''
         Therefore, the machine to be acquired from the MachineHolder is
@@ -193,6 +193,12 @@ class Scheduler():
         duration and after that reruns the scaling phase.
         '''
         
+        eligible_vm_ids = []
+        for i, vm in self.vm_types.iterrows():
+            if self.core_capacity >= vm["core"] and self.memory_capacity >= vm["memory"]:
+                eligible_vm_ids.append(vm)
+        
+        print(eligible_vm_ids)
         
 
     def free_expired_tasks_and_instances(self, timestamp):
@@ -262,7 +268,7 @@ def main():
             instancelist.append(row)
     print(len(tasklist), len(instancelist))
     sched.packer(list_of_tasks=tasklist, list_of_vms=instancelist, task_bins=sched.task_bins, instance_bins=sched.instance_bins)    
-    
+    sched.scaling()
     
     
     
