@@ -156,7 +156,6 @@ class Scheduler():
                 sum += len(instance.list_of_tasks)
         print(sum)
         
-        
     def scaling(self):
         eligible_vm_ids = []
         sorted_vm_list = self.vm_types.sort_values(["core", "memory"], ascending=False)
@@ -201,16 +200,18 @@ class Scheduler():
                     
         # drop expired tasks from the task bins
         for bin in self.task_bins:
-            bin[:] = [task for task in bin if task.end_time <= timestamp]
+            bin[:] = [task for task in bin if task.end_time > timestamp]
 
         # expired instances  check if any instance in the instance bins has expired
         for bin in self.instance_bins:
-            bin[:] = [instance for instance in bin if instance.endtime <= timestamp]    
+            bin[:] = [instance for instance in bin if instance.endtime > timestamp]    
+            bin[:] = [instance for instance in bin if instance.list_of_tasks > 0]
+            
         # drop expired bins from the task bins
         # iterate instance bins
         for bin in self.instance_bins:
             for index, instance in enumerate(bin):
-                # update the instance bin index according to the current timestamp\
+                # update the instance bin index according to the current timestamp
                 remaining_time = instance.runtime - timestamp
                 current_index = self.obtain_bin_index(self.instance_bins, instance.runtime)
                 new_index = self.obtain_bin_index(self.instance_bins, remaining_time)
