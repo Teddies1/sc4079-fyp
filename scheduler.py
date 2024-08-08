@@ -32,7 +32,7 @@ class Scheduler():
         self.task_queue = []
         self.task_bins = [[] for _ in range(self.no_of_bins)]
         self.instance_bins = [[] for _ in range(self.no_of_bins)]
-        self.vm_types = pd.read_csv("../outputs/vmlist2.csv")
+        self.vm_types = pd.read_csv("../outputs/vmlist3.csv")
         
     def load_tasks_to_bins(self, list_of_tasks):
         for row in list_of_tasks:
@@ -154,7 +154,6 @@ class Scheduler():
         for bin in self.instance_bins:
             for instance in bin:
                 sum += len(instance.list_of_tasks)
-                print(len(instance.list_of_tasks))
         print(sum)
         
         
@@ -170,23 +169,7 @@ class Scheduler():
             acquire new instance based on the instance type and assign tasks in candidate group
         
         '''
-        group_size = 1
         
-        for i in range(len(self.task_bins)-1 , -1, -1):
-            candidate_groups = []
-            if len(self.task_bins[i]) > 0:    
-                group_list = []
-                for task in self.task_bins[i]:
-                    if task.assigned == False:
-                        if len(group_list) <= group_size:
-                            group_list.append(task)
-                        else:
-                            candidate_groups.append(group_list)
-                            group_list = []
-                            group_size += 1
-                            group_list.append(task)
-
-            print(candidate_groups)
         '''
         Therefore, the machine to be acquired from the MachineHolder is
         always the machine with the highest possible resources capacity (taken
@@ -207,11 +190,25 @@ class Scheduler():
                         flag = 1
             if flag == 0 and self.core_capacity >= vm["core"] and self.memory_capacity >= vm["memory"]:
                 eligible_vm_ids.append(vm)
+                
+        if len(eligible_vm_ids) > 0:
+            max_resource_vm = eligible_vm_ids[0]
+            max_resource_instance_obj = VirtualMachine(int(max_resource_vm["vmTypeId"]), float(max_resource_vm["core"]), float(max_resource_vm["memory"]), float(max_resource_vm["starttime"]), float(max_resource_vm["endtime"]), float(max_resource_vm["maxruntime"]))
+            
+            for i in range(len(self.task_bins)-1 , -1, -1):
+                for task in self.task_bins[i]:
+                    if task.assigned == False:
+                        max_resource_instance_obj.list_of_tasks.append(task)
+                        
+            index = self.obtain_bin_index(self.instance_bins, max_resource_instance_obj.runtime)
+            self.instance_bins[index].append(max_resource_instance_obj)    
         
-        max_resource_vm = eligible_vm_ids[0]
+        sum = 0
+        for bin in self.instance_bins:
+            for instance in bin:
+                sum += len(instance.list_of_tasks)
+        print(sum)
         
-        print(max_resource_vm)
-
     def free_expired_tasks_and_instances(self, timestamp):
         # expired tasks  check if any task in the task bins has expired
         # iterate expired tasks
