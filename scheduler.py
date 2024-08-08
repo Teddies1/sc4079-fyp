@@ -158,27 +158,6 @@ class Scheduler():
         
         
     def scaling(self):
-        '''
-        Input Task Bins, Instance Bins, Unscheduled Tasks
-        Output -
-        iterate unscheduled tasks task bins descending
-        while unscheduled tasks in that bin not empty
-            create candidate groups
-            iterate all available instance types and pair with each candidate group
-            calculate the score for the pair candidate group and instance type
-            acquire new instance based on the instance type and assign tasks in candidate group
-        
-        '''
-        
-        '''
-        Therefore, the machine to be acquired from the MachineHolder is
-        always the machine with the highest possible resources capacity (taken
-        from a pool of machines).
-        If no machine could be acquired (100% machines are in used), the
-        scheduler puts the task back to the head of the queue, sleeps for a fixed
-        duration and after that reruns the scaling phase.
-        '''
-        
         eligible_vm_ids = []
         sorted_vm_list = self.vm_types.sort_values(["core", "memory"], ascending=False)
 
