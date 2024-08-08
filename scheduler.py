@@ -20,6 +20,7 @@ class Scheduler():
     instance_bins: list[list[VirtualMachine]]
     
     task_queue: list[Task]
+    instance_queue: list[VirtualMachine]
     
     vm_types: pd.DataFrame
     no_of_bins = math.floor(math.log(1209600, 2)) + 1
@@ -30,6 +31,7 @@ class Scheduler():
         self.core_capacity = machine.cpu
         self.memory_capacity = machine.memory
         self.task_queue = []
+        self.instance_queue = []
         self.task_bins = [[] for _ in range(self.no_of_bins)]
         self.instance_bins = [[] for _ in range(self.no_of_bins)]
         self.vm_types = pd.read_csv("../outputs/vmlist3.csv")
@@ -68,7 +70,6 @@ class Scheduler():
         #iterate unscheduled tasks
         for i in range(len(self.task_bins)):
             for task in self.task_bins[i]:
-                print("iterate inside bin for task with runtime:", task.runtime)
                 #eligible instances  check if any instance with same bin is eligible to take the task
                 count = 0
                 for instance in self.instance_bins[i]:
@@ -76,14 +77,12 @@ class Scheduler():
                         if instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity:
                             count += 1
                 #if eligible instances not empty
-                print("eligible instances:", count)
                 if count > 0:
                     #assign the task to the instance with remaining runtime closest to the task with the same vmTypeId
                     task_runtime = task.runtime
                     for instance in self.instance_bins[i]:
                         if task.assigned == False and task.runtime <= instance.runtime and (instance.runtime == task_runtime or math.isclose(instance.runtime, task_runtime)):
                             if instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity:
-                                print("sucessfully assigned task to instance")
                                 task.assigned = True
                                 #add task’s requested CPU and memory to memory capacity
                                 if len(instance.list_of_tasks) == 0:
@@ -97,19 +96,16 @@ class Scheduler():
                     uppack_index = i + 1
                     #uppack_eligible_instances  check if any instance with greater bins is eligible
                     while uppack_index < len(self.task_bins):
-                        print("uppacking starts")
                         count = 0
                         for instance in self.instance_bins[uppack_index]:
                             if instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity:
                                 count += 1
-                        print("eligible instances:", count)
                         #if uppack_eligible_instances not empty
                         if count > 0:
                             #assign to the instance with most available resources
                             resource_sorted_instance_list = sorted(self.instance_bins[uppack_index], key=lambda x: (float(x.requested_core), float(x.requested_memory)), reverse=True)
                             for instance in resource_sorted_instance_list:
                                 if task.runtime <= instance.runtime and instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity and task.assigned == False:
-                                    print("uppacking assignment successful")
                                     task.assigned = True
                                     #add task’s requested CPU and memory to memory capacity
                                     if len(instance.list_of_tasks) == 0:
@@ -124,12 +120,10 @@ class Scheduler():
                         #downppack_elgible_instances  check if any lower bins instance is eligible'
                         downpack_index = i - 1
                         while downpack_index >= 0:
-                            print("downpacking starts")
                             count = 0
                             for instance in self.instance_bins[downpack_index]:
                                 if instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity:
                                     count += 1
-                            print("eligible instances:", count)
                             #if downpack_eligible_instances not empty
                             if count > 0:
                                 promoted_index = 0
@@ -137,7 +131,6 @@ class Scheduler():
                                 for index, instance in enumerate(resource_sorted_instance_list):
                                     if task.runtime <= instance.runtime and task.assigned == False and instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity:
                                     #assign to the instance with most available resources
-                                        print("downpacking assignment successful")
                                         task.assigned = True
                                         #add task’s requested CPU and memory to memory capacity
                                         if len(instance.list_of_tasks) == 0:
@@ -218,9 +211,34 @@ class Scheduler():
                 if current_index != new_index:
                     self.instance_bins[new_index].append(bin.pop(index))
 
-    def stratus():
-        pass
+    def stratus(self):
+        fourteen_days = 1209600
+        machine = Machine(16)
         
+        taskfile = open("../outputs/tasklist2.csv", 'r')
+        taskreader = csv.reader(taskfile)
+        next(taskreader)
+        
+        instancefile = open("../outputs/assignedinstancelist2.csv", 'r')
+        instancereader = csv.reader(instancefile)
+        next(instancereader)
+        
+        tasklist = []
+        instancelist = []
+        
+        for i in range(1, 16):
+            for row in taskreader:
+                if float(row[3]) <= i:
+                    self.task_queue.append(row)
+                    
+            for row in instancereader:
+                if float(row[2]) <= i:
+                    self.instance_queue.append(row)
+                    
+            print(len(self.task_queue), len(self.instance_queue))
+            self.packer(list_of_tasks=self.task_queue, list_of_vms=self.instance_queue)    
+            self.scaling()
+            # self.free_expired_tasks_and_instances(i)
 def main():
     '''
     It simulates
@@ -236,27 +254,28 @@ def main():
     machine = Machine(16)
     sched = Scheduler(machine)
     
-    taskfile = open("../outputs/tasklist2.csv", 'r')
-    taskreader = csv.reader(taskfile)
-    next(taskreader)
+    # taskfile = open("../outputs/tasklist2.csv", 'r')
+    # taskreader = csv.reader(taskfile)
+    # next(taskreader)
     
-    instancefile = open("../outputs/assignedinstancelist2.csv", 'r')
-    instancereader = csv.reader(instancefile)
-    next(instancereader)
+    # instancefile = open("../outputs/assignedinstancelist2.csv", 'r')
+    # instancereader = csv.reader(instancefile)
+    # next(instancereader)
     
-    tasklist = []
-    instancelist = []
+    # tasklist = []
+    # instancelist = []
     
-    for row in taskreader:
-        if float(row[3]) <= 15:
-            tasklist.append(row)
+    # for row in taskreader:
+    #     if float(row[3]) <= 15:
+    #         tasklist.append(row)
             
-    for row in instancereader:
-        if float(row[2]) <= 15:
-            instancelist.append(row)
-    print(len(tasklist), len(instancelist))
-    sched.packer(list_of_tasks=tasklist, list_of_vms=instancelist)    
-    sched.scaling()
+    # for row in instancereader:
+    #     if float(row[2]) <= 15:
+    #         instancelist.append(row)
+    # print(len(tasklist), len(instancelist))
+    # sched.packer(list_of_tasks=tasklist, list_of_vms=instancelist)    
+    # sched.scaling()
+    sched.stratus()
     
     
     
