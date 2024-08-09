@@ -38,13 +38,13 @@ class Scheduler():
         
     def load_tasks_to_bins(self, list_of_tasks):
         for row in list_of_tasks:
-            task = Task(int(row[0]), int(row[2]), float(row[5]), float(row[3]), float(row[4]), float(row[6]), float(row[7]))
+            task = Task(int(row['taskId']), int(row['vmTypeId']), float(row['runtime']) ,float(row['starttime']), float(row['endtime']), float(row['requested_core']), float(row['requested_memory']))
             index = self.obtain_bin_index(self.task_bins, task.runtime)
             self.task_bins[index].append(task)
             
     def load_vms_to_bins(self, list_of_vms):
         for row in list_of_vms:
-            instance = VirtualMachine(int(row[0]), float(row[5]), float(row[6]), float(row[2]), float(row[3]), float(row[4]))
+            instance = VirtualMachine(int(row['vmTypeId']), float(row['core']), float(row['memory']), float(row['starttime']), float(row['endtime']), float(row['maxruntime']))
             index = self.obtain_bin_index(self.instance_bins, instance.runtime)
             self.instance_bins[index].append(instance)
             
@@ -61,7 +61,7 @@ class Scheduler():
         
     def packer(self, list_of_tasks, list_of_vms):
         list_of_tasks.sort(key=lambda x: float(x[5]), reverse=True)
-        max_runtime_index = self.obtain_bin_index(self.task_bins, list_of_tasks[0][5])
+        # max_runtime_index = self.obtain_bin_index(self.task_bins, list_of_tasks[0][5])
         count = 0
         #sort the unscheduled tasks based on the runtime descending
         self.load_tasks_to_bins(list_of_tasks)
@@ -198,7 +198,7 @@ class Scheduler():
         # expired instances  check if any instance in the instance bins has expired
         for bin in self.instance_bins:
             bin[:] = [instance for instance in bin if instance.endtime > timestamp]    
-            bin[:] = [instance for instance in bin if instance.list_of_tasks > 0]
+            bin[:] = [instance for instance in bin if len(instance.list_of_tasks) > 0]
             
         # drop expired bins from the task bins
         # iterate instance bins
@@ -215,30 +215,32 @@ class Scheduler():
         fourteen_days = 1209600
         machine = Machine(16)
         
-        taskfile = open("../outputs/tasklist2.csv", 'r')
-        taskreader = csv.reader(taskfile)
-        next(taskreader)
+        task_csv = pd.read_csv("../outputs/tasklist2.csv")
+        instance_csv = pd.read_csv("../outputs/assignedinstancelist2.csv")
         
-        instancefile = open("../outputs/assignedinstancelist2.csv", 'r')
-        instancereader = csv.reader(instancefile)
-        next(instancereader)
+        task_csv_pointer = 0
+        instance_csv_pointer = 0
         
         tasklist = []
         instancelist = []
         
         for i in range(1, 16):
-            for row in taskreader:
-                if float(row[3]) <= i:
-                    self.task_queue.append(row)
+            
+            self.task_queue = []
+            self.instance_queue = []
+            
+            while task_csv_pointer < len(task_csv) and task_csv.loc[task_csv_pointer]['starttime'] < i-1 and task_csv.loc[task_csv_pointer]['starttime'] <= i:
+                self.task_queue.append(task_csv.loc[task_csv_pointer])
+                task_csv_pointer += 1
                     
-            for row in instancereader:
-                if float(row[2]) <= i:
-                    self.instance_queue.append(row)
+            while instance_csv_pointer < len(instance_csv) and instance_csv.loc[instance_csv_pointer]['starttime'] < (i-1) and instance_csv.loc[instance_csv_pointer]['starttime'] <= i:
+                self.instance_queue.append(instance_csv.loc[instance_csv_pointer])
+                instance_csv_pointer += 1
                     
             print(len(self.task_queue), len(self.instance_queue))
             self.packer(list_of_tasks=self.task_queue, list_of_vms=self.instance_queue)    
             self.scaling()
-            # self.free_expired_tasks_and_instances(i)
+            self.free_expired_tasks_and_instances(i)
 def main():
     '''
     It simulates
@@ -254,27 +256,6 @@ def main():
     machine = Machine(16)
     sched = Scheduler(machine)
     
-    # taskfile = open("../outputs/tasklist2.csv", 'r')
-    # taskreader = csv.reader(taskfile)
-    # next(taskreader)
-    
-    # instancefile = open("../outputs/assignedinstancelist2.csv", 'r')
-    # instancereader = csv.reader(instancefile)
-    # next(instancereader)
-    
-    # tasklist = []
-    # instancelist = []
-    
-    # for row in taskreader:
-    #     if float(row[3]) <= 15:
-    #         tasklist.append(row)
-            
-    # for row in instancereader:
-    #     if float(row[2]) <= 15:
-    #         instancelist.append(row)
-    # print(len(tasklist), len(instancelist))
-    # sched.packer(list_of_tasks=tasklist, list_of_vms=instancelist)    
-    # sched.scaling()
     sched.stratus()
     
     
