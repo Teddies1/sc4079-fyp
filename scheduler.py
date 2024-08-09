@@ -143,11 +143,6 @@ class Scheduler():
                                 promoted_instance = self.instance_bins[downpack_index].pop(promoted_index)
                                 self.instance_bins[i].append(promoted_instance)
                             downpack_index -= 1
-        sum = 0
-        for bin in self.instance_bins:
-            for instance in bin:
-                sum += len(instance.list_of_tasks)
-        print(sum)
         
     def scaling(self):
         eligible_vm_ids = []
@@ -174,23 +169,23 @@ class Scheduler():
             index = self.obtain_bin_index(self.instance_bins, max_resource_instance_obj.runtime)
             self.instance_bins[index].append(max_resource_instance_obj)    
         
-        sum = 0
-        for bin in self.instance_bins:
-            for instance in bin:
-                sum += len(instance.list_of_tasks)
-        print(sum)
-        
     def free_expired_tasks_and_instances(self, timestamp):
         # expired tasks  check if any task in the task bins has expired
         # iterate expired tasks
         for bin in self.instance_bins:
             for instance in bin:
-                if instance.endtime > timestamp:
+                if instance.endtime <= timestamp:
                     # deduct the CPU used in the instance where the task is assigned
-                    self.core_capacity += instance.requested_core
-                    # deduct the memory used in the instance where the task is assigned
-                    self.memory_capacity += instance.requested_memory
                     
+                    added_core = instance.requested_core + self.core_capacity
+                    added_memory = instance.requested_memory + self.memory_capacity
+                    if added_core <= 1 and added_memory <= 1:
+                        
+                        print("removing expired instance with core and memory of: ", instance.requested_core, instance.requested_memory)
+                        self.core_capacity += instance.requested_core
+                        # deduct the memory used in the instance where the task is assigned
+                        self.memory_capacity += instance.requested_memory
+                        
         # drop expired tasks from the task bins
         for bin in self.task_bins:
             bin[:] = [task for task in bin if task.end_time > timestamp]
@@ -224,8 +219,8 @@ class Scheduler():
         tasklist = []
         instancelist = []
         
-        for i in range(1, 16):
-            
+        for i in range(1, fourteen_days):
+            print(i)
             self.task_queue = []
             self.instance_queue = []
             
