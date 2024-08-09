@@ -89,7 +89,6 @@ class Scheduler():
                                     self.core_capacity -= instance.requested_core
                                     self.memory_capacity -= instance.requested_memory 
                                 instance.list_of_tasks.append(task)
-                                print("current core and memory capacity is: ", self.core_capacity, self.memory_capacity)
                                 break
                 #else
                 else:
@@ -112,7 +111,6 @@ class Scheduler():
                                         self.core_capacity -= instance.requested_core
                                         self.memory_capacity -= instance.requested_memory
                                     instance.list_of_tasks.append(task)
-                                    print("current core and memory capacity after uppacking is: ", self.core_capacity, self.memory_capacity)
                                     break
                         uppack_index += 1
                     #else
@@ -138,7 +136,6 @@ class Scheduler():
                                             self.memory_capacity -= instance.requested_memory
                                         instance.list_of_tasks.append(task)
                                         promoted_index = index
-                                        print("current core and memory capacity after downpacking is: ", self.core_capacity, self.memory_capacity)
                                 self.instance_bins[downpack_index].sort(key=lambda x: (float(x.requested_core), float(x.requested_memory)), reverse=True)
                                 promoted_instance = self.instance_bins[downpack_index].pop(promoted_index)
                                 self.instance_bins[i].append(promoted_instance)
@@ -181,7 +178,6 @@ class Scheduler():
                     added_memory = instance.requested_memory + self.memory_capacity
                     if added_core <= 1 and added_memory <= 1:
                         
-                        print("removing expired instance with core and memory of: ", instance.requested_core, instance.requested_memory)
                         self.core_capacity += instance.requested_core
                         # deduct the memory used in the instance where the task is assigned
                         self.memory_capacity += instance.requested_memory
@@ -219,8 +215,8 @@ class Scheduler():
         tasklist = []
         instancelist = []
         
-        for i in range(1, fourteen_days):
-            print(i)
+        for i in range(1, fourteen_days, 100):
+            print("Current timestamp is: ", i)
             self.task_queue = []
             self.instance_queue = []
             
@@ -232,7 +228,6 @@ class Scheduler():
                 self.instance_queue.append(instance_csv.loc[instance_csv_pointer])
                 instance_csv_pointer += 1
                     
-            print(len(self.task_queue), len(self.instance_queue))
             self.packer(list_of_tasks=self.task_queue, list_of_vms=self.instance_queue)    
             self.scaling()
             self.free_expired_tasks_and_instances(i)
