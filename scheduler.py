@@ -231,6 +231,11 @@ class Scheduler():
             self.packer(list_of_tasks=self.task_queue, list_of_vms=self.instance_queue)    
             self.scaling()
             self.free_expired_tasks_and_instances(i)
+            
+    def baseline_algo(self):
+        pass
+    
+    
 def main():
     '''
     It simulates
