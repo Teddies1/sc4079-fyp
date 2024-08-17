@@ -36,16 +36,22 @@ class Scheduler():
         self.instance_bins = [[] for _ in range(self.no_of_bins)]
         self.vm_types = pd.read_csv("../outputs/vmlist3.csv")
         
-    def load_tasks_to_bins(self, list_of_tasks):
+    def load_tasks_to_bins(self, list_of_tasks, algo):
         for row in list_of_tasks:
             task = Task(int(row['taskId']), int(row['vmTypeId']), float(row['runtime']) ,float(row['starttime']), float(row['endtime']), float(row['requested_core']), float(row['requested_memory']))
-            index = self.obtain_bin_index(self.task_bins, task.runtime)
+            if algo == "stratus":
+                index = self.obtain_bin_index(self.task_bins, task.runtime)
+            elif algo == "baseline":
+                index = 0
             self.task_bins[index].append(task)
             
-    def load_vms_to_bins(self, list_of_vms):
+    def load_vms_to_bins(self, list_of_vms, algo):
         for row in list_of_vms:
             instance = VirtualMachine(int(row['vmTypeId']), float(row['core']), float(row['memory']), float(row['starttime']), float(row['endtime']), float(row['maxruntime']))
-            index = self.obtain_bin_index(self.instance_bins, instance.runtime)
+            if algo == "stratus":
+                index = self.obtain_bin_index(self.instance_bins, instance.runtime)
+            elif algo == "baseline":
+                index = 0
             self.instance_bins[index].append(instance)
             
     def obtain_bin_index(self, bins, runtime):
@@ -64,8 +70,8 @@ class Scheduler():
         # max_runtime_index = self.obtain_bin_index(self.task_bins, list_of_tasks[0][5])
         count = 0
         #sort the unscheduled tasks based on the runtime descending
-        self.load_tasks_to_bins(list_of_tasks)
-        self.load_vms_to_bins(list_of_vms)
+        self.load_tasks_to_bins(list_of_tasks, "stratus")
+        self.load_vms_to_bins(list_of_vms, "stratus")
         
         #iterate unscheduled tasks
         for i in range(len(self.task_bins)):
@@ -230,7 +236,11 @@ class Scheduler():
             self.free_expired_tasks_and_instances(i)
     
     def baseline_algo(self, list_of_tasks, list_of_vms):
-        pass
+        
+        self.load_tasks_to_bins(list_of_tasks, "baseline")
+        self.load_vms_to_bins(list_of_vms, "baseline")
+        
+        
     
         '''
         def log(self, scheduler, cpu_usage_list: list = None, memory_usage_list: list = None):
@@ -287,8 +297,8 @@ def main():
     machine = Machine(16)
     sched = Scheduler(machine)
     
-    sched.stratus()
-    
+    # sched.stratus()
+    sched.baseline()
     
     
     
