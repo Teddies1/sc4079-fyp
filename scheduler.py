@@ -212,9 +212,6 @@ class Scheduler():
         task_csv_pointer = 0
         instance_csv_pointer = 0
         
-        tasklist = []
-        instancelist = []
-        
         for i in range(1, fourteen_days, 1000):
             print("Current timestamp is: ", i)
             self.task_queue = []
@@ -231,11 +228,53 @@ class Scheduler():
             self.packer(list_of_tasks=self.task_queue, list_of_vms=self.instance_queue)    
             self.scaling()
             self.free_expired_tasks_and_instances(i)
-            
-    def baseline_algo(self):
+    
+    def baseline_algo(self, list_of_tasks, list_of_vms):
         pass
     
-    
+        '''
+        def log(self, scheduler, cpu_usage_list: list = None, memory_usage_list: list = None):
+        while any(scheduler.keep_logging):
+            if cpu_usage_list is not None:
+                cpu_utilization = scheduler.current_cpu_requested / self.in_use_cpu_resource * 100 if self.in_use_cpu_resource > 0 else 0
+                cpu_usage_list.append((self.env.now / 3600, self.in_use_cpu_resource, cpu_utilization))
+            if memory_usage_list is not None:
+                memory_utilization = scheduler.current_memory_requested / self.in_use_memory_resource * 100 if self.in_use_memory_resource > 0 else 0
+                memory_usage_list.append((self.env.now / 3600, self.in_use_memory_resource, memory_utilization))
+            # print(f"CPU Usage: {self.in_use_cpu_resource:.2f}")
+            # print(f"Memory Usage: {self.in_use_memory_resource:.2f}")
+            # print(f"Number of machines in use: {self.in_use_machine_num}")
+
+            yield self.env.timeout(1800) # every 30 minutes
+        '''
+    def baseline(self):
+        fourteen_days = 1209600
+        machine = Machine(16)
+        
+        task_csv = pd.read_csv("../outputs/tasklist2.csv")
+        instance_csv = pd.read_csv("../outputs/assignedinstancelist2.csv")
+        
+        task_csv_pointer = 0
+        instance_csv_pointer = 0
+        
+        tasklist = []
+        instancelist = []
+        
+        for i in range(1, fourteen_days, 1000):
+            print("Current timestamp is: ", i)
+            self.task_queue = []
+            self.instance_queue = []
+            
+            while task_csv_pointer < len(task_csv) and task_csv.loc[task_csv_pointer]['starttime'] < i-1 and task_csv.loc[task_csv_pointer]['starttime'] <= i:
+                self.task_queue.append(task_csv.loc[task_csv_pointer])
+                task_csv_pointer += 1
+                    
+            while instance_csv_pointer < len(instance_csv) and instance_csv.loc[instance_csv_pointer]['starttime'] < (i-1) and instance_csv.loc[instance_csv_pointer]['starttime'] <= i:
+                self.instance_queue.append(instance_csv.loc[instance_csv_pointer])
+                instance_csv_pointer += 1
+                    
+            self.baseline_algo(list_of_tasks=self.task_queue, list_of_vms=self.instance_queue)
+            
 def main():
     '''
     It simulates
