@@ -257,9 +257,6 @@ class Scheduler():
         task_csv_pointer = 0
         instance_csv_pointer = 0
         
-        tasklist = []
-        instancelist = []
-        
         for i in range(1, fourteen_days, 1000):
             print("Current timestamp is: ", i)
             self.task_queue = []
