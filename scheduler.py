@@ -266,22 +266,7 @@ class Scheduler():
                                 self.memory_capacity -= instance.requested_memory 
                             instance.list_of_tasks.append(task)
                             break
-        
-        '''
-        def log(self, scheduler, cpu_usage_list: list = None, memory_usage_list: list = None):
-        while any(scheduler.keep_logging):
-            if cpu_usage_list is not None:
-                cpu_utilization = scheduler.current_cpu_requested / self.in_use_cpu_resource * 100 if self.in_use_cpu_resource > 0 else 0
-                cpu_usage_list.append((self.env.now / 3600, self.in_use_cpu_resource, cpu_utilization))
-            if memory_usage_list is not None:
-                memory_utilization = scheduler.current_memory_requested / self.in_use_memory_resource * 100 if self.in_use_memory_resource > 0 else 0
-                memory_usage_list.append((self.env.now / 3600, self.in_use_memory_resource, memory_utilization))
-            # print(f"CPU Usage: {self.in_use_cpu_resource:.2f}")
-            # print(f"Memory Usage: {self.in_use_memory_resource:.2f}")
-            # print(f"Number of machines in use: {self.in_use_machine_num}")
 
-            yield self.env.timeout(1800) # every 30 minutes
-        '''
     def baseline(self):
         fourteen_days = 1209600
         machine = Machine(16)
