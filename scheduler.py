@@ -250,6 +250,16 @@ class Scheduler():
         print(self.core_log)
         print(self.memory_log)
         
+        with open(f"../logging/stratus_memory_usage.csv", "w") as f:
+            writer = csv.writer(f)
+            writer.writerow(["memory_utilization"])
+            writer.writerows(self.memory_log)
+            
+        with open(f"../logging/stratus_core_usage.csv", "w") as f:
+            writer = csv.writer(f)
+            writer.writerow(["core_utilization"])
+            writer.writerows(self.core_log)
+        
     def baseline_algo(self, list_of_tasks, list_of_vms):
         
         self.load_tasks_to_bins(list_of_tasks, "baseline")
@@ -303,6 +313,16 @@ class Scheduler():
         print(self.core_log)
         print(self.memory_log)
         
+        with open(f"../logging/baseline_memory_usage.csv", "w") as f:
+            writer = csv.writer(f)
+            writer.writerow(["memory_utilization"])
+            writer.writerows(self.memory_log)
+            
+        with open(f"../logging/baseline_core_usage.csv", "w") as f:
+            writer = csv.writer(f)
+            writer.writerow(["core_utilization"])
+            writer.writerows(self.core_log)
+            
 def main():
     '''
     It simulates
