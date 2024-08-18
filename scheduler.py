@@ -240,8 +240,18 @@ class Scheduler():
         self.load_tasks_to_bins(list_of_tasks, "baseline")
         self.load_vms_to_bins(list_of_vms, "baseline")
         
+        for task in self.task_bins[0]:
+            for instance in self.instance_bins[0]:
+                    if instance.requested_core >= task.requested_core and instance.requested_memory >= task.requested_memory:
+                        if instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity:
+                            task.assigned = True
+                            #add task’s requested CPU and memory to memory capacity
+                            if len(instance.list_of_tasks) == 0:
+                                self.core_capacity -= instance.requested_core
+                                self.memory_capacity -= instance.requested_memory 
+                            instance.list_of_tasks.append(task)
+                            break
         
-    
         '''
         def log(self, scheduler, cpu_usage_list: list = None, memory_usage_list: list = None):
         while any(scheduler.keep_logging):
@@ -279,7 +289,6 @@ class Scheduler():
             while instance_csv_pointer < len(instance_csv) and instance_csv.loc[instance_csv_pointer]['starttime'] < (i-1) and instance_csv.loc[instance_csv_pointer]['starttime'] <= i:
                 self.instance_queue.append(instance_csv.loc[instance_csv_pointer])
                 instance_csv_pointer += 1
-                    
             self.baseline_algo(list_of_tasks=self.task_queue, list_of_vms=self.instance_queue)
             
 def main():
