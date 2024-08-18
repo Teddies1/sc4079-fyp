@@ -22,6 +22,9 @@ class Scheduler():
     task_queue: list[Task]
     instance_queue: list[VirtualMachine]
     
+    memory_log: list[float]
+    core_log: list[float]
+    
     vm_types: pd.DataFrame
     no_of_bins = math.floor(math.log(1209600, 2)) + 1
     
@@ -218,6 +221,9 @@ class Scheduler():
         task_csv_pointer = 0
         instance_csv_pointer = 0
         
+        self.core_log = []
+        self.memory_log = []
+        
         for i in range(1, fourteen_days, 1000):
             print("Current timestamp is: ", i)
             self.task_queue = []
@@ -233,8 +239,17 @@ class Scheduler():
                     
             self.packer(list_of_tasks=self.task_queue, list_of_vms=self.instance_queue)    
             self.scaling()
+            
+            self.core_log.append(1 - self.core_capacity)
+            self.memory_log.append(1 - self.memory_capacity)
+            
             self.free_expired_tasks_and_instances(i)
-    
+            
+            
+            
+        print(self.core_log)
+        print(self.memory_log)
+        
     def baseline_algo(self, list_of_tasks, list_of_vms):
         
         self.load_tasks_to_bins(list_of_tasks, "baseline")
@@ -277,6 +292,9 @@ class Scheduler():
         task_csv_pointer = 0
         instance_csv_pointer = 0
         
+        self.core_log = []
+        self.memory_log = []
+        
         for i in range(1, fourteen_days, 1000):
             print("Current timestamp is: ", i)
             self.task_queue = []
@@ -291,8 +309,15 @@ class Scheduler():
                 instance_csv_pointer += 1
                 
             self.baseline_algo(list_of_tasks=self.task_queue, list_of_vms=self.instance_queue)
+            
+            self.core_log.append(1 - self.core_capacity)
+            self.memory_log.append(1 - self.memory_capacity)
+            
             self.free_expired_tasks_and_instances(i)
             
+        print(self.core_log)
+        print(self.memory_log)
+        
 def main():
     '''
     It simulates
@@ -308,8 +333,8 @@ def main():
     machine = Machine(16)
     sched = Scheduler(machine)
     
-    # sched.stratus()
-    sched.baseline()
+    sched.stratus()
+    # sched.baseline()
     
     
     
