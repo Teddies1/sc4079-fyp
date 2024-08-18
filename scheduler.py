@@ -289,7 +289,9 @@ class Scheduler():
             while instance_csv_pointer < len(instance_csv) and instance_csv.loc[instance_csv_pointer]['starttime'] < (i-1) and instance_csv.loc[instance_csv_pointer]['starttime'] <= i:
                 self.instance_queue.append(instance_csv.loc[instance_csv_pointer])
                 instance_csv_pointer += 1
+                
             self.baseline_algo(list_of_tasks=self.task_queue, list_of_vms=self.instance_queue)
+            self.free_expired_tasks_and_instances(i)
             
 def main():
     '''
