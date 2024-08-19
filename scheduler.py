@@ -61,7 +61,6 @@ class Scheduler():
             self.instance_bins[index].append(instance)
             
     def obtain_bin_index(self, bins, runtime):
-        # [0, 1), [1, 2), [2, 4), [4, 8), [8, 16)
         runtime = float(runtime)
         if runtime < 1:
             return 0
@@ -218,7 +217,6 @@ class Scheduler():
         pass
     
     def stratus(self, total_time, interval):
-        
         task_csv = pd.read_csv("../outputs/tasklist2.csv")
         instance_csv = pd.read_csv("../outputs/assignedinstancelist2.csv")
         
@@ -266,7 +264,6 @@ class Scheduler():
                         break
 
     def baseline(self, total_time, interval):
-        
         task_csv = pd.read_csv("../outputs/tasklist2.csv")
         instance_csv = pd.read_csv("../outputs/assignedinstancelist2.csv")
         
@@ -296,25 +293,19 @@ class Scheduler():
             
             self.free_expired_tasks_and_instances_stratus(i)
         
-        
 def main():
-    '''
-    It simulates
-    instance allocation and job placement decisions made by evaluated
-    schedulers (Sec. 4.3), advancing simulation time as jobs arrive and
-    complete.
-    
-    Pending tasks are
-    scheduled in batches during a periodic scheduling event; the frequency
-    of the scheduling event is configurable.
-    '''
     fourteen_days = 1209600
     machine = Machine(16)
     sched = Scheduler(machine)
     
+    print("-----Running Stratus Algo-----")
     sched.stratus(total_time=30000, interval=1000)    
+    print("-----Finished Stratus Algo-----")
+    
+    print("-----Running Baseline Algo-----")
     sched.baseline(total_time=30000, interval=1000)
-            
+    print("-----Finished Baseline Algo-----")
+    
     with open(f"../logging/core_usage.csv", "w") as f:
         writer = csv.writer(f)
         writer.writerow(["baseline_core_util", "stratus_core_util"])
