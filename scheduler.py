@@ -213,6 +213,7 @@ class Scheduler():
                 new_index = self.obtain_bin_index(self.instance_bins, remaining_time)
                 if current_index != new_index:
                     self.instance_bins[new_index].append(bin.pop(index))
+                    
     def free_expired_tasks_and_instances_baseline(self, timestamp):
         pass
     
@@ -251,25 +252,22 @@ class Scheduler():
             self.free_expired_tasks_and_instances_stratus(i)
         
     def baseline_algo(self, list_of_tasks, list_of_vms):
-        
         self.load_tasks_to_bins(list_of_tasks, "baseline")
         self.load_vms_to_bins(list_of_vms, "baseline")
         
         for task in self.task_bins[0]:
             for instance in self.instance_bins[0]:
-                    if instance.requested_core >= task.requested_core and instance.requested_memory >= task.requested_memory:
-                        if instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity:
-                            task.assigned = True
-                            #add task’s requested CPU and memory to memory capacity
-                            if len(instance.list_of_tasks) == 0:
-                                self.core_capacity -= instance.requested_core
-                                self.memory_capacity -= instance.requested_memory 
-                            instance.list_of_tasks.append(task)
-                            break
+                if instance.requested_core >= task.requested_core and instance.requested_memory >= task.requested_memory:
+                    if instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity:
+                        task.assigned = True
+                        #add task’s requested CPU and memory to memory capacity
+                        if len(instance.list_of_tasks) == 0:
+                            self.core_capacity -= instance.requested_core
+                            self.memory_capacity -= instance.requested_memory 
+                        instance.list_of_tasks.append(task)
+                        break
 
-    def baseline(self):
-        fourteen_days = 1209600
-        machine = Machine(16)
+    def baseline(self, total_time, interval):
         
         task_csv = pd.read_csv("../outputs/tasklist2.csv")
         instance_csv = pd.read_csv("../outputs/assignedinstancelist2.csv")
@@ -280,7 +278,7 @@ class Scheduler():
         self.baseline_core_log = []
         self.baseline_memory_log = []
         
-        for i in range(1, 30000, 1000):
+        for i in range(1, total_time, interval):
             print("Current timestamp is: ", i)
             self.task_queue = []
             self.instance_queue = []
@@ -317,7 +315,7 @@ def main():
     sched = Scheduler(machine)
     
     sched.stratus()    
-    sched.baseline()
+    sched.baseline(total_time=30000, interval=1000)
             
     with open(f"../logging/core_usage.csv", "w") as f:
         writer = csv.writer(f)
