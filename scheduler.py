@@ -213,7 +213,8 @@ class Scheduler():
                 new_index = self.obtain_bin_index(self.instance_bins, remaining_time)
                 if current_index != new_index:
                     self.instance_bins[new_index].append(bin.pop(index))
-    
+    def free_expired_tasks_and_instances_baseline(self, timestamp):
+        pass
     
     def stratus(self):
         fourteen_days = 1209600
