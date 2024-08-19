@@ -22,8 +22,11 @@ class Scheduler():
     task_queue: list[Task]
     instance_queue: list[VirtualMachine]
     
-    memory_log: list[float]
-    core_log: list[float]
+    stratus_core_log: list[float]
+    stratus_memory_log: list[float]
+    
+    baseline_core_log: list[float]
+    baseline_memory_log: list[float]
     
     vm_types: pd.DataFrame
     no_of_bins = math.floor(math.log(1209600, 2)) + 1
@@ -175,7 +178,7 @@ class Scheduler():
             index = self.obtain_bin_index(self.instance_bins, max_resource_instance_obj.runtime)
             self.instance_bins[index].append(max_resource_instance_obj)    
         
-    def free_expired_tasks_and_instances(self, timestamp):
+    def free_expired_tasks_and_instances_stratus(self, timestamp):
         # expired tasks  check if any task in the task bins has expired
         # iterate expired tasks
         for bin in self.instance_bins:
@@ -210,7 +213,8 @@ class Scheduler():
                 new_index = self.obtain_bin_index(self.instance_bins, remaining_time)
                 if current_index != new_index:
                     self.instance_bins[new_index].append(bin.pop(index))
-
+    
+    
     def stratus(self):
         fourteen_days = 1209600
         machine = Machine(16)
@@ -221,10 +225,10 @@ class Scheduler():
         task_csv_pointer = 0
         instance_csv_pointer = 0
         
-        self.core_log = []
-        self.memory_log = []
+        self.stratus_core_log = []
+        self.stratus_memory_log = []
         
-        for i in range(1, fourteen_days, 1000):
+        for i in range(1, 30000, 1000):
             print("Current timestamp is: ", i)
             self.task_queue = []
             self.instance_queue = []
@@ -240,25 +244,10 @@ class Scheduler():
             self.packer(list_of_tasks=self.task_queue, list_of_vms=self.instance_queue)    
             self.scaling()
             
-            self.core_log.append(1 - self.core_capacity)
-            self.memory_log.append(1 - self.memory_capacity)
+            self.stratus_core_log.append(1 - self.core_capacity)
+            self.stratus_memory_log.append(1 - self.memory_capacity)
             
-            self.free_expired_tasks_and_instances(i)
-            
-            
-            
-        print(self.core_log)
-        print(self.memory_log)
-        
-        with open(f"../logging/stratus_memory_usage.csv", "w") as f:
-            writer = csv.writer(f)
-            writer.writerow(["memory_utilization"])
-            writer.writerows(self.memory_log)
-            
-        with open(f"../logging/stratus_core_usage.csv", "w") as f:
-            writer = csv.writer(f)
-            writer.writerow(["core_utilization"])
-            writer.writerows(self.core_log)
+            self.free_expired_tasks_and_instances_stratus(i)
         
     def baseline_algo(self, list_of_tasks, list_of_vms):
         
@@ -287,10 +276,10 @@ class Scheduler():
         task_csv_pointer = 0
         instance_csv_pointer = 0
         
-        self.core_log = []
-        self.memory_log = []
+        self.baseline_core_log = []
+        self.baseline_memory_log = []
         
-        for i in range(1, fourteen_days, 1000):
+        for i in range(1, 30000, 1000):
             print("Current timestamp is: ", i)
             self.task_queue = []
             self.instance_queue = []
@@ -305,24 +294,12 @@ class Scheduler():
                 
             self.baseline_algo(list_of_tasks=self.task_queue, list_of_vms=self.instance_queue)
             
-            self.core_log.append(1 - self.core_capacity)
-            self.memory_log.append(1 - self.memory_capacity)
+            self.baseline_core_log.append(1 - self.core_capacity)
+            self.baseline_memory_log.append(1 - self.memory_capacity)
             
-            self.free_expired_tasks_and_instances(i)
-            
-        print(self.core_log)
-        print(self.memory_log)
+            self.free_expired_tasks_and_instances_stratus(i)
         
-        with open(f"../logging/baseline_memory_usage.csv", "w") as f:
-            writer = csv.writer(f)
-            writer.writerow(["memory_utilization"])
-            writer.writerows(self.memory_log)
-            
-        with open(f"../logging/baseline_core_usage.csv", "w") as f:
-            writer = csv.writer(f)
-            writer.writerow(["core_utilization"])
-            writer.writerows(self.core_log)
-            
+        
 def main():
     '''
     It simulates
@@ -338,10 +315,18 @@ def main():
     machine = Machine(16)
     sched = Scheduler(machine)
     
-    sched.stratus()
-    # sched.baseline()
+    sched.stratus()    
+    sched.baseline()
+            
+    with open(f"../logging/core_usage.csv", "w") as f:
+        writer = csv.writer(f)
+        writer.writerow(["baseline_core_util", "stratus_core_util"])
+        writer.writerows(zip(sched.baseline_core_log, sched.stratus_core_log))
     
-    
-    
+    with open(f"../logging/memory_usage.csv", "w") as f:
+        writer = csv.writer(f)
+        writer.writerow(["baseline_memory_util", "stratus_memory_util"])
+        writer.writerows(zip(sched.baseline_memory_log, sched.stratus_memory_log))
+        
 if __name__ == "__main__":
     main()
