@@ -217,9 +217,7 @@ class Scheduler():
     def free_expired_tasks_and_instances_baseline(self, timestamp):
         pass
     
-    def stratus(self):
-        fourteen_days = 1209600
-        machine = Machine(16)
+    def stratus(self, total_time, interval):
         
         task_csv = pd.read_csv("../outputs/tasklist2.csv")
         instance_csv = pd.read_csv("../outputs/assignedinstancelist2.csv")
@@ -230,7 +228,7 @@ class Scheduler():
         self.stratus_core_log = []
         self.stratus_memory_log = []
         
-        for i in range(1, 30000, 1000):
+        for i in range(1, total_time, interval):
             print("Current timestamp is: ", i)
             self.task_queue = []
             self.instance_queue = []
@@ -314,7 +312,7 @@ def main():
     machine = Machine(16)
     sched = Scheduler(machine)
     
-    sched.stratus()    
+    sched.stratus(total_time=30000, interval=1000)    
     sched.baseline(total_time=30000, interval=1000)
             
     with open(f"../logging/core_usage.csv", "w") as f:
