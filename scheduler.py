@@ -188,8 +188,7 @@ class Scheduler():
                         self.memory_capacity += instance.requested_memory
                         
         for bin in self.task_bins:
-            bin[:] = [task for task in bin if task.end_time > timestamp or task.assigned == False]
-            # bin[:] = [task for task in bin if task.end_time > timestamp]
+            bin[:] = [task for task in bin if task.end_time > timestamp]
 
         for bin in self.instance_bins:
             bin[:] = [instance for instance in bin if instance.endtime > timestamp]    
@@ -213,8 +212,9 @@ class Scheduler():
                     self.memory_capacity += instance.requested_memory
                     
         self.instance_bins[0][:] = [instance for instance in self.instance_bins[0] if instance.endtime > timestamp]    
+        self.instance_bins[0][:] = [instance for instance in self.instance_bins[0] if len(instance.list_of_tasks) > 0]
         
-        self.task_bins[0][:] = [task for task in self.task_bins[0] if task.end_time > timestamp or task.assigned == False]
+        self.task_bins[0][:] = [task for task in self.task_bins[0] if task.end_time > timestamp]
             
     def stratus(self, total_time, interval):
         self.memory_capacity = 1
