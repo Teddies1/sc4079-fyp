@@ -178,35 +178,24 @@ class Scheduler():
             self.instance_bins[index].append(max_resource_instance_obj)    
         
     def free_expired_tasks_and_instances_stratus(self, timestamp):
-        # expired tasks  check if any task in the task bins has expired
-        # iterate expired tasks
         for bin in self.instance_bins:
             for instance in bin:
                 if instance.endtime <= timestamp:
-                    # deduct the CPU used in the instance where the task is assigned
-                    
                     added_core = instance.requested_core + self.core_capacity
                     added_memory = instance.requested_memory + self.memory_capacity
                     if added_core <= 1 and added_memory <= 1:
-                        
                         self.core_capacity += instance.requested_core
-                        # deduct the memory used in the instance where the task is assigned
                         self.memory_capacity += instance.requested_memory
                         
-        # drop expired tasks from the task bins
         for bin in self.task_bins:
             bin[:] = [task for task in bin if task.end_time > timestamp]
 
-        # expired instances  check if any instance in the instance bins has expired
         for bin in self.instance_bins:
             bin[:] = [instance for instance in bin if instance.endtime > timestamp]    
             bin[:] = [instance for instance in bin if len(instance.list_of_tasks) > 0]
             
-        # drop expired bins from the task bins
-        # iterate instance bins
         for bin in self.instance_bins:
             for index, instance in enumerate(bin):
-                # update the instance bin index according to the current timestamp
                 remaining_time = instance.runtime - timestamp
                 current_index = self.obtain_bin_index(self.instance_bins, instance.runtime)
                 new_index = self.obtain_bin_index(self.instance_bins, remaining_time)
@@ -214,8 +203,19 @@ class Scheduler():
                     self.instance_bins[new_index].append(bin.pop(index))
                     
     def free_expired_tasks_and_instances_baseline(self, timestamp):
-        pass
-    
+        for instance in self.instance_bins[0]:
+            if instance.endtime <= timestamp:
+                added_core = instance.requested_core + self.core_capacity
+                added_memory = instance.requested_memory + self.memory_capacity
+                if added_core <= 1 and added_memory <= 1:
+                    self.core_capacity += instance.requested_core
+                    self.memory_capacity += instance.requested_memory
+                    
+        self.instance_bins[0][:] = [instance for instance in self.instance_bins[0] if instance.endtime > timestamp]    
+        self.instance_bins[0][:] = [instance for instance in self.instance_bins[0] if len(instance.list_of_tasks) > 0]
+        
+        self.task_bins[0][:] = [task for task in self.task_bins[0] if task.end_time > timestamp]
+            
     def stratus(self, total_time, interval):
         task_csv = pd.read_csv("../outputs/tasklist2.csv")
         instance_csv = pd.read_csv("../outputs/assignedinstancelist2.csv")
@@ -291,7 +291,7 @@ class Scheduler():
             self.baseline_core_log.append(1 - self.core_capacity)
             self.baseline_memory_log.append(1 - self.memory_capacity)
             
-            self.free_expired_tasks_and_instances_stratus(i)
+            self.free_expired_tasks_and_instances_baseline(i)
         
 def main():
     fourteen_days = 1209600
