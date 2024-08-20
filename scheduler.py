@@ -295,15 +295,17 @@ class Scheduler():
         
 def main():
     fourteen_days = 1209600
+    total_time = 30000
+    interval = 1000
     machine = Machine(16)
     sched = Scheduler(machine)
     
     print("-----Running Stratus Algo-----")
-    sched.stratus(total_time=30000, interval=1000)    
+    sched.stratus(total_time, interval)    
     print("-----Finished Stratus Algo-----")
     
     print("-----Running Baseline Algo-----")
-    sched.baseline(total_time=30000, interval=1000)
+    sched.baseline(total_time, interval)
     print("-----Finished Baseline Algo-----")
     
     with open(f"../logging/core_usage.csv", "w") as f:
