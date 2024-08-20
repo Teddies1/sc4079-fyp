@@ -308,15 +308,17 @@ def main():
     sched.baseline(total_time, interval)
     print("-----Finished Baseline Algo-----")
     
+    timestamp_array = [i for i in range(1, total_time, interval)]
+    
     with open(f"../logging/core_usage.csv", "w") as f:
         writer = csv.writer(f)
-        writer.writerow(["baseline_core_util", "stratus_core_util"])
-        writer.writerows(zip(sched.baseline_core_log, sched.stratus_core_log))
+        writer.writerow(["timestamp", "baseline_core_util", "stratus_core_util"])
+        writer.writerows(zip(timestamp_array, sched.baseline_core_log, sched.stratus_core_log))
     
     with open(f"../logging/memory_usage.csv", "w") as f:
         writer = csv.writer(f)
-        writer.writerow(["baseline_memory_util", "stratus_memory_util"])
-        writer.writerows(zip(sched.baseline_memory_log, sched.stratus_memory_log))
+        writer.writerow(["timestamp", "baseline_memory_util", "stratus_memory_util"])
+        writer.writerows(zip(timestamp_array, sched.baseline_memory_log, sched.stratus_memory_log))
         
 if __name__ == "__main__":
     main()
