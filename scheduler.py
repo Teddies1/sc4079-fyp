@@ -188,7 +188,8 @@ class Scheduler():
                         self.memory_capacity += instance.requested_memory
                         
         for bin in self.task_bins:
-            bin[:] = [task for task in bin if task.end_time > timestamp]
+            bin[:] = [task for task in bin if task.end_time > timestamp or task.assigned == False]
+            # bin[:] = [task for task in bin if task.end_time > timestamp]
 
         for bin in self.instance_bins:
             bin[:] = [instance for instance in bin if instance.endtime > timestamp]    
@@ -212,9 +213,8 @@ class Scheduler():
                     self.memory_capacity += instance.requested_memory
                     
         self.instance_bins[0][:] = [instance for instance in self.instance_bins[0] if instance.endtime > timestamp]    
-        self.instance_bins[0][:] = [instance for instance in self.instance_bins[0] if len(instance.list_of_tasks) > 0]
         
-        self.task_bins[0][:] = [task for task in self.task_bins[0] if task.end_time > timestamp]
+        self.task_bins[0][:] = [task for task in self.task_bins[0] if task.end_time > timestamp or task.assigned == False]
             
     def stratus(self, total_time, interval):
         self.memory_capacity = 1
@@ -255,20 +255,23 @@ class Scheduler():
         self.load_vms_to_bins(list_of_vms, "baseline")
         
         for task in self.task_bins[0]:
-            for instance in self.instance_bins[0]:
-                if instance.requested_core >= task.requested_core and instance.requested_memory >= task.requested_memory:
-                    if instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity:
+            if task.assigned == False:
+                for instance in self.instance_bins[0]:
+                    if instance.runtime >= task.runtime and len(instance.list_of_tasks) == 0 and instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity:
                         task.assigned = True
-                        #add task’s requested CPU and memory to memory capacity
-                        if len(instance.list_of_tasks) == 0:
+                        #add task’s requested CPU and memory to memory capacity      
+                        if len(instance.list_of_tasks) == 0:  
                             self.core_capacity -= instance.requested_core
                             self.memory_capacity -= instance.requested_memory 
                         instance.list_of_tasks.append(task)
                         break
-
+    
     def baseline(self, total_time, interval):
         self.memory_capacity = 1
         self.core_capacity = 1
+        
+        self.instance_bins = [[]]
+        self.task_bins = [[]]
         
         task_csv = pd.read_csv("../outputs/tasklist2.csv")
         instance_csv = pd.read_csv("../outputs/assignedinstancelist2.csv")
@@ -301,7 +304,7 @@ class Scheduler():
         
 def main():
     fourteen_days = 1209600
-    total_time = 10000
+    total_time = 50000
     interval = 1000
     machine = Machine(16)
     sched = Scheduler(machine)
