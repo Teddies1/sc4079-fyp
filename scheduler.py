@@ -217,6 +217,9 @@ class Scheduler():
         self.task_bins[0][:] = [task for task in self.task_bins[0] if task.end_time > timestamp]
             
     def stratus(self, total_time, interval):
+        self.memory_capacity = 1
+        self.core_capacity = 1
+        
         task_csv = pd.read_csv("../outputs/tasklist2.csv")
         instance_csv = pd.read_csv("../outputs/assignedinstancelist2.csv")
         
@@ -264,6 +267,9 @@ class Scheduler():
                         break
 
     def baseline(self, total_time, interval):
+        self.memory_capacity = 1
+        self.core_capacity = 1
+        
         task_csv = pd.read_csv("../outputs/tasklist2.csv")
         instance_csv = pd.read_csv("../outputs/assignedinstancelist2.csv")
         
@@ -295,7 +301,7 @@ class Scheduler():
         
 def main():
     fourteen_days = 1209600
-    total_time = 30000
+    total_time = 10000
     interval = 1000
     machine = Machine(16)
     sched = Scheduler(machine)
