@@ -180,7 +180,7 @@ class Scheduler():
     def free_expired_tasks_and_instances_stratus(self, timestamp):
         for bin in self.instance_bins:
             for instance in bin:
-                if instance.endtime <= timestamp:
+                if instance.endtime <= timestamp or len(instance.list_of_tasks) == 0:
                     added_core = instance.requested_core + self.core_capacity
                     added_memory = instance.requested_memory + self.memory_capacity
                     if added_core <= 1 and added_memory <= 1:
@@ -189,6 +189,7 @@ class Scheduler():
                         
         for bin in self.task_bins:
             bin[:] = [task for task in bin if task.end_time > timestamp]
+            bin[:] = [task for task in bin if task.assigned == False]
 
         for bin in self.instance_bins:
             bin[:] = [instance for instance in bin if instance.endtime > timestamp]    
@@ -204,7 +205,7 @@ class Scheduler():
                     
     def free_expired_tasks_and_instances_baseline(self, timestamp):
         for instance in self.instance_bins[0]:
-            if instance.endtime <= timestamp:
+            if instance.endtime <= timestamp or len(instance.list_of_tasks) == 0:
                 added_core = instance.requested_core + self.core_capacity
                 added_memory = instance.requested_memory + self.memory_capacity
                 if added_core <= 1 and added_memory <= 1:
@@ -215,7 +216,8 @@ class Scheduler():
         self.instance_bins[0][:] = [instance for instance in self.instance_bins[0] if len(instance.list_of_tasks) > 0]
         
         self.task_bins[0][:] = [task for task in self.task_bins[0] if task.end_time > timestamp]
-            
+        self.task_bins[0][:] = [task for task in self.task_bins[0] if task.assigned == False]
+        
     def stratus(self, total_time, interval):
         self.memory_capacity = 1
         self.core_capacity = 1
@@ -319,6 +321,7 @@ def main():
     
     timestamp_array = [i for i in range(1, total_time, interval)]
     
+    print("----Writing to CSV-----")
     with open(f"../logging/core_usage.csv", "w") as f:
         writer = csv.writer(f)
         writer.writerow(["timestamp", "baseline_core_util", "stratus_core_util"])
@@ -328,6 +331,6 @@ def main():
         writer = csv.writer(f)
         writer.writerow(["timestamp", "baseline_memory_util", "stratus_memory_util"])
         writer.writerows(zip(timestamp_array, sched.baseline_memory_log, sched.stratus_memory_log))
-        
+    print("----Finished Writing to CSV-----")    
 if __name__ == "__main__":
     main()
