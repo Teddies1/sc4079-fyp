@@ -175,6 +175,8 @@ class Scheduler():
                         max_resource_instance_obj.list_of_tasks.append(task)
                         
             index = self.obtain_bin_index(self.instance_bins, max_resource_instance_obj.runtime)
+            self.core_capacity -= max_resource_instance_obj.requested_core
+            self.memory_capacity -= max_resource_instance_obj.requested_memory
             self.instance_bins[index].append(max_resource_instance_obj)    
         
     def free_expired_tasks_and_instances_stratus(self, timestamp):
@@ -306,20 +308,19 @@ class Scheduler():
         
 def main():
     fourteen_days = 1209600
-    total_time = 50000
     interval = 1000
     machine = Machine(16)
     sched = Scheduler(machine)
     
     print("-----Running Stratus Algo-----")
-    sched.stratus(total_time, interval)    
+    sched.stratus(fourteen_days, interval)    
     print("-----Finished Stratus Algo-----")
     
     print("-----Running Baseline Algo-----")
-    sched.baseline(total_time, interval)
+    sched.baseline(fourteen_days, interval)
     print("-----Finished Baseline Algo-----")
     
-    timestamp_array = [i for i in range(1, total_time, interval)]
+    timestamp_array = [i for i in range(1, fourteen_days, interval)]
     
     print("----Writing to CSV-----")
     with open(f"../logging/core_usage.csv", "w") as f:
