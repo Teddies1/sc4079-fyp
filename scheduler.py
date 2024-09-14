@@ -1,6 +1,6 @@
 from virtual_machine import VirtualMachine
 from vm_task import Task
-from physical_machine import Machine
+from instance import Instance
 
 import math
 import csv
@@ -9,7 +9,7 @@ import pandas as pd
 
 class Scheduler():
     
-    machine: Machine
+    machine: Instance
     
     core_capacity: float
     memory_capacity: float
@@ -31,7 +31,7 @@ class Scheduler():
     vm_types: pd.DataFrame
     no_of_bins = math.floor(math.log(1209600, 2)) + 1
     
-    def __init__(self, machine: Machine) -> None:
+    def __init__(self, machine: Instance) -> None:
         self.machine = machine
         self.machine_id = machine.machine_id
         self.core_capacity = machine.cpu
@@ -42,7 +42,7 @@ class Scheduler():
         self.instance_bins = [[] for _ in range(self.no_of_bins)]
         self.vm_types = pd.read_csv("../outputs/vmlist3.csv")
         
-    def load_tasks_to_bins(self, list_of_tasks, algo):
+    def load_tasks_to_bins(self, list_of_tasks, algo) -> None:
         for row in list_of_tasks:
             task = Task(int(row['taskId']), int(row['vmTypeId']), float(row['runtime']) ,float(row['starttime']), float(row['endtime']), float(row['requested_core']), float(row['requested_memory']))
             if algo == "stratus":
@@ -51,7 +51,7 @@ class Scheduler():
                 index = 0
             self.task_bins[index].append(task)
             
-    def load_vms_to_bins(self, list_of_vms, algo):
+    def load_vms_to_bins(self, list_of_vms, algo) -> None:
         for row in list_of_vms:
             instance = VirtualMachine(int(row['vmTypeId']), float(row['core']), float(row['memory']), float(row['starttime']), float(row['endtime']), float(row['maxruntime']))
             if algo == "stratus":
@@ -60,7 +60,7 @@ class Scheduler():
                 index = 0
             self.instance_bins[index].append(instance)
             
-    def obtain_bin_index(self, bins, runtime):
+    def obtain_bin_index(self, bins, runtime) -> int:
         runtime = float(runtime)
         if runtime < 1:
             return 0
@@ -70,7 +70,7 @@ class Scheduler():
             bin_index = len(bins) - 1
         return bin_index
         
-    def packer(self, list_of_tasks, list_of_vms):
+    def packer(self, list_of_tasks, list_of_vms) -> None:
         list_of_tasks.sort(key=lambda x: float(x[5]), reverse=True)
         # max_runtime_index = self.obtain_bin_index(self.task_bins, list_of_tasks[0][5])
         count = 0
@@ -152,7 +152,7 @@ class Scheduler():
                                 self.instance_bins[i].append(promoted_instance)
                             downpack_index -= 1
         
-    def scaling(self):
+    def scaling(self) -> None:
         eligible_vm_ids = []
         sorted_vm_list = self.vm_types.sort_values(["core", "memory"], ascending=False)
 
@@ -179,7 +179,7 @@ class Scheduler():
             self.memory_capacity -= max_resource_instance_obj.requested_memory
             self.instance_bins[index].append(max_resource_instance_obj)    
         
-    def free_expired_tasks_and_instances_stratus(self, timestamp):
+    def free_expired_tasks_and_instances_stratus(self, timestamp) -> None:
         for bin in self.instance_bins:
             for instance in bin:
                 if instance.endtime <= timestamp or len(instance.list_of_tasks) == 0:
@@ -205,7 +205,7 @@ class Scheduler():
                 if current_index != new_index:
                     self.instance_bins[new_index].append(bin.pop(index))
                     
-    def free_expired_tasks_and_instances_baseline(self, timestamp):
+    def free_expired_tasks_and_instances_baseline(self, timestamp) -> None:
         for instance in self.instance_bins[0]:
             if instance.endtime <= timestamp or len(instance.list_of_tasks) == 0:
                 added_core = instance.requested_core + self.core_capacity
@@ -220,7 +220,7 @@ class Scheduler():
         self.task_bins[0][:] = [task for task in self.task_bins[0] if task.end_time > timestamp]
         self.task_bins[0][:] = [task for task in self.task_bins[0] if task.assigned == False]
         
-    def stratus(self, total_time, interval):
+    def stratus(self, total_time, interval) -> None:
         self.memory_capacity = 1
         self.core_capacity = 1
         
@@ -254,7 +254,7 @@ class Scheduler():
             
             self.free_expired_tasks_and_instances_stratus(i)
         
-    def baseline_algo(self, list_of_tasks, list_of_vms):
+    def baseline_algo(self, list_of_tasks, list_of_vms) -> None:
         self.load_tasks_to_bins(list_of_tasks, "baseline")
         self.load_vms_to_bins(list_of_vms, "baseline")
         
@@ -269,8 +269,8 @@ class Scheduler():
                             self.memory_capacity -= instance.requested_memory 
                         instance.list_of_tasks.append(task)
                         break
-    
-    def baseline(self, total_time, interval):
+                                                    
+    def baseline(self, total_time, interval) -> None:
         self.memory_capacity = 1
         self.core_capacity = 1
         
@@ -306,10 +306,10 @@ class Scheduler():
             
             self.free_expired_tasks_and_instances_baseline(i)
         
-def main():
+def main() -> None:
     fourteen_days = 1209600
     interval = 1000
-    machine = Machine(16)
+    machine = Instance(16)
     sched = Scheduler(machine)
     
     print("-----Running Stratus Algo-----")
