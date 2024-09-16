@@ -16,7 +16,9 @@ class Instance():
     def get_max_runtime(self) -> float:
         if len(self.list_of_tasks) > 0:
             self.max_runtime = max(self.list_of_tasks, key=lambda x: x.runtime)
-        
+        else:
+            self.max_runtime = 0
+            
         return self.max_runtime
     
     
