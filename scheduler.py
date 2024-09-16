@@ -71,16 +71,7 @@ class Scheduler():
             
     def update_instance_bins():
         pass
-    # def get_min_runtime_difference(self, task_runtime: float, bin_index: int) -> int:
-    #     min_runtime = 1209601
-    #     min_runtime_instance_id = -1
-    #     for instance in self.instance_bins[bin_index]:
-    #         runtime_difference = abs(instance.max_runtime - task_runtime)
-    #         if runtime_difference < min_runtime:
-    #             min_runtime = min(min_runtime, runtime_difference)
-    #             min_runtime_instance_id = instance.machine_id
-            
-    #     return min_runtime_instance_id
+    
     
     def packer(self, list_of_tasks) -> None:
         list_of_tasks.sort(key=lambda x: float(x[5]), reverse=True)
