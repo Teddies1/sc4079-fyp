@@ -69,18 +69,21 @@ class Scheduler():
                 index = 0
             self.instance_bins[index].append(instance)
             
-    def update_instance_bins():
-        pass
-    
+    def update_instance_bins(self, algo):
+        for instance in self.instance_pool:
+            instance.max_runtime = instance.get_max_runtime()
+            if algo == "stratus":
+                runtime_bin_index = self.obtain_bin_index(self.instance_bins, instance.max_runtime)
+            elif algo == "baseline":
+                runtime_bin_index = 0
+            self.instance_bins[runtime_bin_index].append(instance)
     
     def packer(self, list_of_tasks) -> None:
         list_of_tasks.sort(key=lambda x: float(x[5]), reverse=True)
-        # max_runtime_index = self.obtain_bin_index(self.task_bins, list_of_tasks[0][5])
         count = 0
         #sort the unscheduled tasks based on the runtime descending
         self.load_tasks_to_bins(list_of_tasks, "stratus")
-        # self.load_instances_to_bins(self.instance_pool, "stratus")
-        self.update_instance_bins()
+        self.update_instance_bins("stratus")
         
         for bin in self.instance_bins:
             for instance in bin:
@@ -109,8 +112,10 @@ class Scheduler():
                                 print("Allocated task to instance in packing phase")
                                 chosen_machine_id = instance.machine_id
                                 chosen_instance = self.instance_pool[chosen_machine_id]
+                                
                                 chosen_instance.core_capacity -= task.requested_core
                                 chosen_instance.memory_capacity -= task.requested_memory
+                                
                                 chosen_instance.list_of_tasks.append(task)
                                 chosen_instance.max_runtime = chosen_instance.get_max_runtime() 
                                 break
@@ -134,8 +139,10 @@ class Scheduler():
                                     print("Allocated task to instance in uppacking phase")
                                     chosen_machine_id = instance.machine_id
                                     chosen_instance = self.instance_pool[chosen_machine_id]
+                                    
                                     chosen_instance.core_capacity -= task.requested_core
                                     chosen_instance.memory_capacity -= task.requested_memory
+                                    
                                     chosen_instance.list_of_tasks.append(task)
                                     chosen_instance.max_runtime = chosen_instance.get_max_runtime()
                                     break
@@ -161,8 +168,10 @@ class Scheduler():
                                         print("Allocated task to instance in downpacking phase")
                                         chosen_machine_id = instance.machine_id
                                         chosen_instance = self.instance_pool[chosen_machine_id]
+                                        
                                         chosen_instance.core_capacity -= task.requested_core
                                         chosen_instance.memory_capacity -= task.requested_memory
+                                        
                                         chosen_instance.list_of_tasks.append(task)
                                         chosen_instance.max_runtime = chosen_instance.get_max_runtime()
                                 #         promoted_index = index
@@ -276,7 +285,7 @@ class Scheduler():
         
     def baseline_algo(self, list_of_tasks) -> None:
         self.load_tasks_to_bins(list_of_tasks, "baseline")
-        self.load_instances_to_bins(self.instance_pool, "baseline")
+        self.update_instance_bins("baseline")
         
         for task in self.task_bins[0]:
             if task.assigned == False:
