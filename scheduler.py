@@ -60,15 +60,6 @@ class Scheduler():
                 index = 0
             self.task_bins[index].append(task)
             
-    def load_instances_to_bins(self, list_of_vms: list[Instance], algo) -> None:
-        for instance in list_of_vms:
-            instance.max_runtime = instance.get_max_runtime()
-            if algo == "stratus":
-                index = self.obtain_bin_index(self.instance_bins, instance.max_runtime)
-            elif algo == "baseline":
-                index = 0
-            self.instance_bins[index].append(instance)
-            
     def update_instance_bins(self, algo):
         self.instance_bins = [[] for _ in range(self.no_of_bins)]
         for instance in self.instance_pool:
