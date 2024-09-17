@@ -169,35 +169,66 @@ class Scheduler():
                             downpack_index -= 1
         for bin in self.instance_bins:
             for instance in bin:
-                print(instance.max_runtime)
+                print(len(instance.list_of_tasks))
                 print(instance.core_capacity, instance.memory_capacity)
                 
     def scaling(self) -> None:
-        eligible_vm_ids = []
-        sorted_vm_list = self.vm_types.sort_values(["core", "memory"], ascending=False)
+        pass
+        # eligible_vm_ids = []
+        # sorted_vm_list = self.vm_types.sort_values(["core", "memory"], ascending=False)
 
-        for i, vm in sorted_vm_list.iterrows():
-            flag = 0
-            for bin in self.instance_bins:
-                for instance in bin:
-                    if vm["vmTypeId"] == instance.vm_type_id:
-                        flag = 1
-            if flag == 0 and self.core_capacity >= vm["core"] and self.memory_capacity >= vm["memory"]:
-                eligible_vm_ids.append(vm)
+        # for i, vm in sorted_vm_list.iterrows():
+        #     flag = 0
+        #     for bin in self.instance_bins:
+        #         for instance in bin:
+        #             if vm["vmTypeId"] == instance.vm_type_id:
+        #                 flag = 1
+        #     if flag == 0 and self.core_capacity >= vm["core"] and self.memory_capacity >= vm["memory"]:
+        #         eligible_vm_ids.append(vm)
                 
-        if len(eligible_vm_ids) > 0:
-            max_resource_vm = eligible_vm_ids[0]
-            max_resource_instance_obj = VirtualMachine(int(max_resource_vm["vmTypeId"]), float(max_resource_vm["core"]), float(max_resource_vm["memory"]), float(max_resource_vm["starttime"]), float(max_resource_vm["endtime"]), float(max_resource_vm["maxruntime"]))
+        # if len(eligible_vm_ids) > 0:
+        #     max_resource_vm = eligible_vm_ids[0]
+        #     max_resource_instance_obj = VirtualMachine(int(max_resource_vm["vmTypeId"]), float(max_resource_vm["core"]), float(max_resource_vm["memory"]), float(max_resource_vm["starttime"]), float(max_resource_vm["endtime"]), float(max_resource_vm["maxruntime"]))
             
-            for i in range(len(self.task_bins)-1 , -1, -1):
-                for task in self.task_bins[i]:
-                    if task.assigned == False:
-                        max_resource_instance_obj.list_of_tasks.append(task)
+        #     for i in range(len(self.task_bins)-1 , -1, -1):
+        #         for task in self.task_bins[i]:
+        #             if task.assigned == False:
+        #                 max_resource_instance_obj.list_of_tasks.append(task)
                         
-            index = self.obtain_bin_index(self.instance_bins, max_resource_instance_obj.runtime)
-            self.core_capacity -= max_resource_instance_obj.requested_core
-            self.memory_capacity -= max_resource_instance_obj.requested_memory
-            self.instance_bins[index].append(max_resource_instance_obj)    
+        #     index = self.obtain_bin_index(self.instance_bins, max_resource_instance_obj.runtime)
+        #     self.core_capacity -= max_resource_instance_obj.requested_core
+        #     self.memory_capacity -= max_resource_instance_obj.requested_memory
+        #     self.instance_bins[index].append(max_resource_instance_obj)
+        
+        # TODO: implement new scaler 
+        
+        # get max instance runtime, cpu and memory capacity
+        # get min instance cpu and memory capacity
+        
+        # search runtime bins from the back
+        
+        # for each candidate group i do 
+            # add tasks to candidate groups until number of tasks = i 
+            # or task group cumulative memory > instance memory and cpu > instance cpu
+        
+        # score = normalised used constraining resource / cost
+        
+        # for each candidate group, it calculates the Score for each instance
+        
+        # for each candidate group do
+            # for each instance in instance pool do        
+                # if cumulative cpu and memory less than instance's cpu and memory then
+                    # cpu_ratio = cumulative_cpu / cpu_capacity
+                    # memory_ratio = cumulative_memory / memory_capacity
+                    
+                    # constraining_resource = min(cpu_ratio, memory_ratio)
+                    # normalised_constraining_resource = constraining_resource / min instance constraining resource
+                    
+                    # note: since cost is proportional to runtime, we use normalised runtime for our cost
+                    # normalised_runtime = instance.runtime / max_instance_runtime
+                    # score = normalised_constaining_resource/ normalised_runtime
+        # get maximum score
+        # candidate group with maximum score is allocated to instance with maximum score
         
     def free_expired_tasks_and_instances_stratus(self, timestamp) -> None:
         for bin in self.instance_bins:
