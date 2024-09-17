@@ -70,12 +70,14 @@ class Scheduler():
             self.instance_bins[index].append(instance)
             
     def update_instance_bins(self, algo):
+        self.instance_bins = [[] for _ in range(self.no_of_bins)]
         for instance in self.instance_pool:
             instance.max_runtime = instance.get_max_runtime()
             if algo == "stratus":
                 runtime_bin_index = self.obtain_bin_index(self.instance_bins, instance.max_runtime)
             elif algo == "baseline":
                 runtime_bin_index = 0
+            # runtime_bin_index = instance.machine_id % len(self.instance_bins)
             self.instance_bins[runtime_bin_index].append(instance)
     
     def packer(self, list_of_tasks) -> None:
@@ -85,9 +87,8 @@ class Scheduler():
         self.load_tasks_to_bins(list_of_tasks, "stratus")
         self.update_instance_bins("stratus")
         
-        for bin in self.instance_bins:
-            for instance in bin:
-                print(instance.get_max_runtime())
+        # for bin in self.instance_bins:
+        #     print(bin)
                 
         #iterate unscheduled tasks
         for i in range(len(self.task_bins)):
@@ -100,6 +101,7 @@ class Scheduler():
                     if instance.max_runtime == task.runtime or math.isclose(instance.max_runtime, task.runtime):
                         if task.requested_core <= instance.core_capacity and task.requested_memory <= instance.memory_capacity:
                             count += 1
+                print("number of eligible instances:", count)
                 #if eligible instances not empty
                 if count > 0:
                     #assign the task to the instance with remaining runtime closest to the task with the same vmTypeId
@@ -121,6 +123,7 @@ class Scheduler():
                                 break
                 #else
                 else:
+                    print("entering uppacking")
                     uppack_index = i + 1
                     #uppack_eligible_instances  check if any instance with greater bins is eligible
                     while uppack_index < len(self.task_bins):
@@ -128,12 +131,13 @@ class Scheduler():
                         for instance in self.instance_bins[uppack_index]:
                             if task.requested_core <= instance.core_capacity and task.requested_memory <= instance.memory_capacity:
                                 count += 1
+                        # print("uppack count: ", count)
                         #if uppack_eligible_instances not empty
                         if count > 0:
                             #assign to the instance with most available resources
                             resource_sorted_instance_list = sorted(self.instance_bins[uppack_index], key=lambda x: (float(x.core_capacity), float(x.memory_capacity)), reverse=True)
                             for instance in resource_sorted_instance_list:
-                                if task.runtime <= instance.max_runtime and task.requested_core <= instance.core_capacity and task.requested_memory <= instance.memory_capacity and task.assigned == False:
+                                if task.requested_core <= instance.core_capacity and task.requested_memory <= instance.memory_capacity and task.assigned == False:
                                     task.assigned = True
                                     #add task’s requested CPU and memory to memory capacity
                                     print("Allocated task to instance in uppacking phase")
@@ -149,6 +153,7 @@ class Scheduler():
                         uppack_index += 1
                     #else
                     if task.assigned == False:
+                        print("entering downpacking")
                         #downppack_elgible_instances  check if any lower bins instance is eligible'
                         downpack_index = i - 1
                         while downpack_index >= 0:
@@ -157,11 +162,12 @@ class Scheduler():
                                 if task.requested_core <= instance.core_capacity and task.requested_memory <= instance.memory_capacity:
                                     count += 1
                             #if downpack_eligible_instances not empty
+                            # print("downpack count: ", count)
                             if count > 0:
                                 promoted_index = 0
                                 resource_sorted_instance_list = sorted(self.instance_bins[downpack_index], key=lambda x: (float(x.core_capacity), float(x.memory_capacity)), reverse=True)
                                 for index, instance in enumerate(resource_sorted_instance_list):
-                                    if task.runtime <= instance.max_runtime and task.assigned == False and task.requested_core <= instance.core_capacity and task.requested_memory <= instance.memory_capacity:
+                                    if task.assigned == False and task.requested_core <= instance.core_capacity and task.requested_memory <= instance.memory_capacity:
                                     #assign to the instance with most available resources
                                         task.assigned = True
                                         #add task’s requested CPU and memory to memory capacity
@@ -179,7 +185,10 @@ class Scheduler():
                                 # promoted_instance = self.instance_bins[downpack_index].pop(promoted_index)
                                 # self.instance_bins[i].append(promoted_instance)
                             downpack_index -= 1
-        
+        for bin in self.instance_bins:
+            for instance in bin:
+                print(len(instance.list_of_tasks))
+                
     def scaling(self) -> None:
         eligible_vm_ids = []
         sorted_vm_list = self.vm_types.sort_values(["core", "memory"], ascending=False)
@@ -281,7 +290,6 @@ class Scheduler():
             # self.stratus_memory_log.append(1 - self.memory_capacity)
             
             # self.free_expired_tasks_and_instances_stratus(i)
-
         
     def baseline_algo(self, list_of_tasks) -> None:
         self.load_tasks_to_bins(list_of_tasks, "baseline")
