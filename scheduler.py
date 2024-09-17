@@ -86,9 +86,6 @@ class Scheduler():
         #sort the unscheduled tasks based on the runtime descending
         self.load_tasks_to_bins(list_of_tasks, "stratus")
         self.update_instance_bins("stratus")
-        
-        # for bin in self.instance_bins:
-        #     print(bin)
                 
         #iterate unscheduled tasks
         for i in range(len(self.task_bins)):
@@ -131,7 +128,6 @@ class Scheduler():
                         for instance in self.instance_bins[uppack_index]:
                             if task.requested_core <= instance.core_capacity and task.requested_memory <= instance.memory_capacity:
                                 count += 1
-                        # print("uppack count: ", count)
                         #if uppack_eligible_instances not empty
                         if count > 0:
                             #assign to the instance with most available resources
@@ -162,7 +158,6 @@ class Scheduler():
                                 if task.requested_core <= instance.core_capacity and task.requested_memory <= instance.memory_capacity:
                                     count += 1
                             #if downpack_eligible_instances not empty
-                            # print("downpack count: ", count)
                             if count > 0:
                                 promoted_index = 0
                                 resource_sorted_instance_list = sorted(self.instance_bins[downpack_index], key=lambda x: (float(x.core_capacity), float(x.memory_capacity)), reverse=True)
@@ -180,14 +175,11 @@ class Scheduler():
                                         
                                         chosen_instance.list_of_tasks.append(task)
                                         chosen_instance.max_runtime = chosen_instance.get_max_runtime()
-                                #         promoted_index = index
-                                # self.instance_bins[downpack_index].sort(key=lambda x: (float(x.core_capacity), float(x.memory_capacity)), reverse=True)
-                                # promoted_instance = self.instance_bins[downpack_index].pop(promoted_index)
-                                # self.instance_bins[i].append(promoted_instance)
                             downpack_index -= 1
         for bin in self.instance_bins:
             for instance in bin:
-                print(len(instance.list_of_tasks))
+                print(instance.max_runtime)
+                print(instance.core_capacity, instance.memory_capacity)
                 
     def scaling(self) -> None:
         eligible_vm_ids = []
