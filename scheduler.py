@@ -77,7 +77,10 @@ class Scheduler():
         #sort the unscheduled tasks based on the runtime descending
         self.load_tasks_to_bins(list_of_tasks, "stratus")
         self.update_instance_bins("stratus")
-                
+        
+        # for bin in self.instance_bins:
+        #     for instance in bin:
+        #         print(instance.core_capacity, instance.memory_capacity)
         #iterate unscheduled tasks
         for i in range(len(self.task_bins)):
             for task in self.task_bins[i]:
@@ -193,6 +196,8 @@ class Scheduler():
         min_memory_instance = min(self.instance_pool, key=lambda x: x.memory_capacity)
         scaler_min_memory = min_memory_instance.memory_capacity
         
+        for instance in self.instance_pool:
+            print(instance.machine_id, instance.core_capacity, instance.memory_capacity)
         # search runtime bins from the back
         for i in range(len(self.task_bins)-1, -1, -1):
             for task in self.task_bins[i]:
@@ -229,29 +234,66 @@ class Scheduler():
                 else:
                     # print("not enough memory")
                     candidate_group_flag = 1
-                    
-        for group in candidate_group_list:
-            print(len(group))
         
-        # score = normalised used constraining resource / cost
-        
+        # score = normalised used constraining resource / cost    
         # for each candidate group, it calculates the Score for each instance
-        
+        max_efficiency_score = -1
+        max_candidate_instance_group = ()
+        max_cumulative_cpu = 0
+        max_cumulative_memory = 0
         # for each candidate group do
-            # for each instance in instance pool do        
+        for group in candidate_group_list:
+            # for each instance in instance pool do
+            cumulative_task_memory = 0
+            cumulative_task_cpu = 0
+            for task in group:
+                cumulative_task_cpu += task.requested_core
+                cumulative_task_memory += task.requested_memory
+                
+            for instance in self.instance_pool:
+                score = 0
+                candidate_instance_group = (group, instance.machine_id)
                 # if cumulative cpu and memory less than instance's cpu and memory then
-                    # cpu_ratio = cumulative_cpu / cpu_capacity
-                    # memory_ratio = cumulative_memory / memory_capacity
-                    
-                    # constraining_resource = min(cpu_ratio, memory_ratio)
-                    # normalised_constraining_resource = constraining_resource / min instance constraining resource
-                    
-                    # note: since cost is proportional to runtime, we use normalised runtime for our cost
-                    # normalised_runtime = instance.runtime / max_instance_runtime
-                    # score = normalised_constaining_resource/ normalised_runtime
+                # cpu_ratio = cumulative_cpu / cpu_capacity
+                cpu_ratio = cumulative_task_cpu
+                # print("cpu_ratio: ", cpu_ratio)
+                # memory_ratio = cumulative_memory / memory_capacity
+                memory_ratio = cumulative_task_memory
+                # print("memory_ratio: ", memory_ratio)
+                # constraining_resource = min(cpu_ratio, memory_ratio)
+                constraining_resource = min(cpu_ratio, memory_ratio)
+                # normalised_constraining_resource = constraining_resource / min instance constraining resource
+                if cpu_ratio < memory_ratio:
+                    # print("min instance cpu: ", scaler_min_cpu)
+                    normalised_constraining_resouce = constraining_resource / scaler_min_cpu
+                else:
+                    # print("min instance memory: ", scaler_min_memory)
+                    normalised_constraining_resouce = constraining_resource / scaler_min_memory
+                # note: since cost is proportional to runtime, we use normalised runtime for our cost
+                # normalised_runtime = instance.runtime / max_instance_runtime
+                normalised_runtime = instance.max_runtime / scaler_max_runtime
+                # score = normalised_constaining_resource/ normalised_runtime
+                score = normalised_constraining_resouce / normalised_runtime
+                if score > max_efficiency_score:
+                    max_efficiency_score = score
+                    max_candidate_instance_group = candidate_instance_group
+                    max_cumulative_cpu = cumulative_task_cpu
+                    max_cumulative_memory = cumulative_task_memory
+                    # print("current max score:", max_efficiency_score)
         # get maximum score
-        # candidate group with maximum score is allocated to instance with maximum score
-        
+        # print(max_candidate_instance_group)
+        if len(max_candidate_instance_group) > 0:
+            max_candidate_group = max_candidate_instance_group[0]
+            max_instance_id = max_candidate_instance_group[1]
+            new_max_instance = Instance(max_instance_id)
+            # candidate group with maximum score is allocated to instance with maximum score
+            new_max_instance.list_of_tasks += max_candidate_group
+            new_max_instance.max_runtime = new_max_instance.get_max_runtime()
+            new_max_instance.core_capacity -= max_cumulative_cpu
+            new_max_instance.memory_capacity -= max_cumulative_memory
+            self.instance_pool.append(new_max_instance)
+            print("assigned new instance with machine id: ", max_instance_id)
+                        
     def free_expired_tasks_and_instances_stratus(self, timestamp) -> None:
         for bin in self.instance_bins:
             for instance in bin:
