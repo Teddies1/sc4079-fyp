@@ -1,6 +1,7 @@
 from vm_task import Task
 
 class Instance():
+    unique_id: int
     machine_id: int
     core_capacity: float = 1
     memory_capacity: float = 1
@@ -9,7 +10,8 @@ class Instance():
     endtime: float
     max_runtime: float = 0
     
-    def __init__(self, machine_id: int) -> None:
+    def __init__(self, unique_id: int, machine_id: int) -> None:
+        self.unique_id = unique_id
         self.machine_id = machine_id
         self.list_of_tasks = []
     
