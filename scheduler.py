@@ -176,33 +176,6 @@ class Scheduler():
         #     print(instance.max_runtime)
             
     def scaling(self) -> None:
-        pass
-        # eligible_vm_ids = []
-        # sorted_vm_list = self.vm_types.sort_values(["core", "memory"], ascending=False)
-
-        # for i, vm in sorted_vm_list.iterrows():
-        #     flag = 0
-        #     for bin in self.instance_bins:
-        #         for instance in bin:
-        #             if vm["vmTypeId"] == instance.vm_type_id:
-        #                 flag = 1
-        #     if flag == 0 and self.core_capacity >= vm["core"] and self.memory_capacity >= vm["memory"]:
-        #         eligible_vm_ids.append(vm)
-                
-        # if len(eligible_vm_ids) > 0:
-        #     max_resource_vm = eligible_vm_ids[0]
-        #     max_resource_instance_obj = VirtualMachine(int(max_resource_vm["vmTypeId"]), float(max_resource_vm["core"]), float(max_resource_vm["memory"]), float(max_resource_vm["starttime"]), float(max_resource_vm["endtime"]), float(max_resource_vm["maxruntime"]))
-            
-        #     for i in range(len(self.task_bins)-1 , -1, -1):
-        #         for task in self.task_bins[i]:
-        #             if task.assigned == False:
-        #                 max_resource_instance_obj.list_of_tasks.append(task)
-                        
-        #     index = self.obtain_bin_index(self.instance_bins, max_resource_instance_obj.runtime)
-        #     self.core_capacity -= max_resource_instance_obj.requested_core
-        #     self.memory_capacity -= max_resource_instance_obj.requested_memory
-        #     self.instance_bins[index].append(max_resource_instance_obj)
-        
         # TODO: implement new scaler 
         candidate_group_list: list[list[Task]] = []
         unassigned_task_list: list[Task] = []
@@ -231,6 +204,7 @@ class Scheduler():
         candidate_group_flag = 0
         unassigned_task_list_pointer = 0
         candidate_group_size = 1
+        
         # for each candidate group i do 
         if len(unassigned_task_list) > 0:
             print("Entering scaling")
@@ -249,17 +223,15 @@ class Scheduler():
                     # print(new_candidate_group)
                 # or task group cumulative memory > instance memory and cpu > instance cpu
                 if cumulative_task_cpu <= 1 and cumulative_task_memory <= 1:
-                    print("enough memory")
+                    # print("enough memory")
                     candidate_group_list.append(new_candidate_group)
                     candidate_group_size += 1
                 else:
-                    print("not enough memory")
+                    # print("not enough memory")
                     candidate_group_flag = 1
                     
         for group in candidate_group_list:
             print(len(group))
-            
-            
         
         # score = normalised used constraining resource / cost
         
