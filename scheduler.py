@@ -89,7 +89,7 @@ class Scheduler():
                     if instance.max_runtime == task.runtime or math.isclose(instance.max_runtime, task.runtime):
                         if task.requested_core <= instance.core_capacity and task.requested_memory <= instance.memory_capacity:
                             count += 1
-                print("number of eligible instances:", count)
+                # print("number of eligible instances:", count)
                 #if eligible instances not empty
                 if count > 0:
                     #assign the task to the instance with remaining runtime closest to the task with the same vmTypeId
@@ -99,7 +99,7 @@ class Scheduler():
                             if task.requested_core <= instance.core_capacity and task.requested_memory <= instance.memory_capacity:
                                 task.assigned = True
                                 #add task’s requested CPU and memory to memory capacity
-                                print("Allocated task to instance in packing phase")
+                                # print("Allocated task to instance in packing phase")
                                 chosen_machine_id = instance.machine_id
                                 chosen_instance = self.instance_pool[chosen_machine_id]
                                 
@@ -111,7 +111,7 @@ class Scheduler():
                                 break
                 #else
                 else:
-                    print("entering uppacking")
+                    # print("entering uppacking")
                     uppack_index = i + 1
                     #uppack_eligible_instances  check if any instance with greater bins is eligible
                     while uppack_index < len(self.task_bins):
@@ -127,7 +127,7 @@ class Scheduler():
                                 if task.requested_core <= instance.core_capacity and task.requested_memory <= instance.memory_capacity and task.assigned == False:
                                     task.assigned = True
                                     #add task’s requested CPU and memory to memory capacity
-                                    print("Allocated task to instance in uppacking phase")
+                                    # print("Allocated task to instance in uppacking phase")
                                     chosen_machine_id = instance.machine_id
                                     chosen_instance = self.instance_pool[chosen_machine_id]
                                     
@@ -140,7 +140,7 @@ class Scheduler():
                         uppack_index += 1
                     #else
                     if task.assigned == False:
-                        print("entering downpacking")
+                        # print("entering downpacking")
                         #downppack_elgible_instances  check if any lower bins instance is eligible'
                         downpack_index = i - 1
                         while downpack_index >= 0:
@@ -157,7 +157,7 @@ class Scheduler():
                                     #assign to the instance with most available resources
                                         task.assigned = True
                                         #add task’s requested CPU and memory to memory capacity
-                                        print("Allocated task to instance in downpacking phase")
+                                        # print("Allocated task to instance in downpacking phase")
                                         chosen_machine_id = instance.machine_id
                                         chosen_instance = self.instance_pool[chosen_machine_id]
                                         
@@ -167,11 +167,14 @@ class Scheduler():
                                         chosen_instance.list_of_tasks.append(task)
                                         chosen_instance.max_runtime = chosen_instance.get_max_runtime()
                             downpack_index -= 1
-        for bin in self.instance_bins:
-            for instance in bin:
-                print(len(instance.list_of_tasks))
-                print(instance.core_capacity, instance.memory_capacity)
-                
+                            
+        # for bin in self.instance_bins:
+        #     for instance in bin:
+        #         print(instance.max_runtime)
+        # print("====")
+        # for instance in self.instance_pool:
+        #     print(instance.max_runtime)
+            
     def scaling(self) -> None:
         pass
         # eligible_vm_ids = []
@@ -201,15 +204,62 @@ class Scheduler():
         #     self.instance_bins[index].append(max_resource_instance_obj)
         
         # TODO: implement new scaler 
-        
+        candidate_group_list: list[list[Task]] = []
+        unassigned_task_list: list[Task] = []
         # get max instance runtime, cpu and memory capacity
+        max_runtime_instance = max(self.instance_pool, key=lambda x: x.max_runtime)
+        scaler_max_runtime = max_runtime_instance.max_runtime
+        max_cpu_instance = max(self.instance_pool, key=lambda x: x.core_capacity)
+        scaler_max_cpu = max_cpu_instance.core_capacity
+        max_memory_instance = max(self.instance_pool, key=lambda x: x.memory_capacity)
+        scaler_max_memory = max_memory_instance.memory_capacity
+        
         # get min instance cpu and memory capacity
+        min_cpu_instance = min(self.instance_pool, key=lambda x: x.core_capacity)
+        scaler_min_cpu = min_cpu_instance.core_capacity
+        min_memory_instance = min(self.instance_pool, key=lambda x: x.memory_capacity)
+        scaler_min_memory = min_memory_instance.memory_capacity
         
         # search runtime bins from the back
-        
+        for i in range(len(self.task_bins)-1, -1, -1):
+            for task in self.task_bins[i]:
+                if task.assigned == False:
+                    unassigned_task_list.append(task)
+                    
+        print("length of unassigned list: ", len(unassigned_task_list))
+        unassigned_task_list.sort(key=lambda x: x.runtime)
+        candidate_group_flag = 0
+        unassigned_task_list_pointer = 0
+        candidate_group_size = 1
         # for each candidate group i do 
-            # add tasks to candidate groups until number of tasks = i 
-            # or task group cumulative memory > instance memory and cpu > instance cpu
+        if len(unassigned_task_list) > 0:
+            print("Entering scaling")
+            while candidate_group_flag == 0: 
+                cumulative_task_memory = 0
+                cumulative_task_cpu = 0
+                new_candidate_group = []
+                # add tasks to candidate groups until number of tasks = i 
+                while unassigned_task_list_pointer < len(unassigned_task_list) and len(new_candidate_group) < candidate_group_size:
+                    new_unassigned_task = unassigned_task_list[unassigned_task_list_pointer]
+                    unassigned_task_list_pointer += 1
+                    
+                    new_candidate_group.append(new_unassigned_task)
+                    cumulative_task_memory += task.requested_memory
+                    cumulative_task_cpu += task.requested_core
+                    # print(new_candidate_group)
+                # or task group cumulative memory > instance memory and cpu > instance cpu
+                if cumulative_task_cpu <= 1 and cumulative_task_memory <= 1:
+                    print("enough memory")
+                    candidate_group_list.append(new_candidate_group)
+                    candidate_group_size += 1
+                else:
+                    print("not enough memory")
+                    candidate_group_flag = 1
+                    
+        for group in candidate_group_list:
+            print(len(group))
+            
+            
         
         # score = normalised used constraining resource / cost
         
@@ -298,7 +348,7 @@ class Scheduler():
                 instance_csv_pointer += 1
                     
             self.packer(list_of_tasks=self.task_queue)    
-            # self.scaling()
+            self.scaling()
             
             # self.stratus_core_log.append(1 - self.core_capacity)
             # self.stratus_memory_log.append(1 - self.memory_capacity)
