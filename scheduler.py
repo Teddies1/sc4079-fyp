@@ -79,9 +79,6 @@ class Scheduler():
         self.load_tasks_to_bins(list_of_tasks, "stratus")
         self.update_instance_bins("stratus")
         
-        for bin in self.instance_bins:
-            for instance in bin:
-                print(instance.unique_id, instance.core_capacity, instance.memory_capacity)
         #iterate unscheduled tasks
         for i in range(len(self.task_bins)):
             for task in self.task_bins[i]:
@@ -167,16 +164,11 @@ class Scheduler():
                             downpack_index -= 1
             
     def scaling(self) -> None:
-        # TODO: implement new scaler 
         candidate_group_list: list[list[Task]] = []
         unassigned_task_list: list[Task] = []
         # get max instance runtime, cpu and memory capacity
         max_runtime_instance = max(self.instance_pool, key=lambda x: x.max_runtime)
         scaler_max_runtime = max_runtime_instance.max_runtime
-        max_cpu_instance = max(self.instance_pool, key=lambda x: x.core_capacity)
-        scaler_max_cpu = max_cpu_instance.core_capacity
-        max_memory_instance = max(self.instance_pool, key=lambda x: x.memory_capacity)
-        scaler_max_memory = max_memory_instance.memory_capacity
         
         # get min instance cpu and memory capacity
         min_cpu_instance = min(self.instance_pool, key=lambda x: x.core_capacity)
@@ -386,7 +378,7 @@ class Scheduler():
         
 def main() -> None:
     fourteen_days = 1209600
-    test_duration = 10000
+    test_duration = 20000
     interval = 1000
     # machine = Instance(16)
     sched = Scheduler()
