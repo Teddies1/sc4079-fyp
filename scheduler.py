@@ -31,13 +31,14 @@ class Scheduler():
     vm_types: pd.DataFrame
     no_of_bins = math.floor(math.log(1209600, 2)) + 1
     instance_pool_size = 35
+    unique_id_pointer = 35
     
     def __init__(self) -> None:
         self.task_queue = []
         self.task_bins = [[] for _ in range(self.no_of_bins)]
         
         self.instance_bins = [[] for _ in range(self.no_of_bins)]
-        self.instance_pool = [Instance(i) for i in range(self.instance_pool_size)]
+        self.instance_pool = [Instance(i, i) for i in range(self.instance_pool_size)]
         
         self.vm_types = pd.read_csv("../outputs/vmlist3.csv")
         
@@ -103,8 +104,8 @@ class Scheduler():
                                 task.assigned = True
                                 #add task’s requested CPU and memory to memory capacity
                                 # print("Allocated task to instance in packing phase")
-                                chosen_machine_id = instance.machine_id
-                                chosen_instance = self.instance_pool[chosen_machine_id]
+                                chosen_machine_id = instance.unique_id
+                                chosen_instance = next((x for x in self.instance_pool if x.unique_id == chosen_machine_id))
                                 
                                 chosen_instance.core_capacity -= task.requested_core
                                 chosen_instance.memory_capacity -= task.requested_memory
@@ -131,8 +132,8 @@ class Scheduler():
                                     task.assigned = True
                                     #add task’s requested CPU and memory to memory capacity
                                     # print("Allocated task to instance in uppacking phase")
-                                    chosen_machine_id = instance.machine_id
-                                    chosen_instance = self.instance_pool[chosen_machine_id]
+                                    chosen_machine_id = instance.unique_id
+                                    chosen_instance = next((x for x in self.instance_pool if x.unique_id == chosen_machine_id))
                                     
                                     chosen_instance.core_capacity -= task.requested_core
                                     chosen_instance.memory_capacity -= task.requested_memory
@@ -161,8 +162,8 @@ class Scheduler():
                                         task.assigned = True
                                         #add task’s requested CPU and memory to memory capacity
                                         # print("Allocated task to instance in downpacking phase")
-                                        chosen_machine_id = instance.machine_id
-                                        chosen_instance = self.instance_pool[chosen_machine_id]
+                                        chosen_machine_id = instance.unique_id
+                                        chosen_instance = next((x for x in self.instance_pool if x.unique_id == chosen_machine_id))
                                         
                                         chosen_instance.core_capacity -= task.requested_core
                                         chosen_instance.memory_capacity -= task.requested_memory
@@ -196,8 +197,8 @@ class Scheduler():
         min_memory_instance = min(self.instance_pool, key=lambda x: x.memory_capacity)
         scaler_min_memory = min_memory_instance.memory_capacity
         
-        for instance in self.instance_pool:
-            print(instance.machine_id, instance.core_capacity, instance.memory_capacity)
+        # for instance in self.instance_pool:
+        #     print(instance.unique_id, instance.machine_id, instance.core_capacity, instance.memory_capacity)
         # search runtime bins from the back
         for i in range(len(self.task_bins)-1, -1, -1):
             for task in self.task_bins[i]:
@@ -226,6 +227,7 @@ class Scheduler():
                     cumulative_task_memory += task.requested_memory
                     cumulative_task_cpu += task.requested_core
                     # print(new_candidate_group)
+                print(cumulative_task_cpu, cumulative_task_memory)
                 # or task group cumulative memory > instance memory and cpu > instance cpu
                 if cumulative_task_cpu <= 1 and cumulative_task_memory <= 1:
                     # print("enough memory")
@@ -234,6 +236,7 @@ class Scheduler():
                 else:
                     # print("not enough memory")
                     candidate_group_flag = 1
+                    
         
         # score = normalised used constraining resource / cost    
         # for each candidate group, it calculates the Score for each instance
@@ -249,7 +252,7 @@ class Scheduler():
             for task in group:
                 cumulative_task_cpu += task.requested_core
                 cumulative_task_memory += task.requested_memory
-                
+                # print(cumulative_task_cpu, cumulative_task_memory)
             for instance in self.instance_pool:
                 score = 0
                 candidate_instance_group = (group, instance.machine_id)
@@ -285,12 +288,15 @@ class Scheduler():
         if len(max_candidate_instance_group) > 0:
             max_candidate_group = max_candidate_instance_group[0]
             max_instance_id = max_candidate_instance_group[1]
-            new_max_instance = Instance(max_instance_id)
+            new_max_instance = Instance(self.unique_id_pointer, max_instance_id)
+            self.unique_id_pointer += 1
             # candidate group with maximum score is allocated to instance with maximum score
             new_max_instance.list_of_tasks += max_candidate_group
             new_max_instance.max_runtime = new_max_instance.get_max_runtime()
             new_max_instance.core_capacity -= max_cumulative_cpu
             new_max_instance.memory_capacity -= max_cumulative_memory
+            # print(max_cumulative_cpu, max_cumulative_memory)
+            # print(new_max_instance.core_capacity, new_max_instance.memory_capacity)
             self.instance_pool.append(new_max_instance)
             print("assigned new instance with machine id: ", max_instance_id)
                         
@@ -425,7 +431,7 @@ def main() -> None:
     fourteen_days = 1209600
     test_duration = 10000
     interval = 1000
-    machine = Instance(16)
+    # machine = Instance(16)
     sched = Scheduler()
     
     print("-----Running Stratus Algo-----")
