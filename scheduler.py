@@ -294,16 +294,14 @@ class Scheduler():
             if task.assigned == False:
                 for instance in self.instance_bins[0]:
                     #check for eligible instances
-                    if task.requested_core <= instance.core_capacity and task.requested_memory <= instance.memory_capacity:
+                    if len(instance.list_of_tasks) == 0 and task.requested_core <= instance.core_capacity and task.requested_memory <= instance.memory_capacity:
                         task.assigned = True
-                        #add task’s requested CPU and memory to memory capacity      
-                        if len(instance.list_of_tasks) == 0:  
-                            instance.core_capacity -= task.requested_core
-                            instance.memory_capacity -= task.requested_memory
+                        instance.core_capacity -= task.requested_core
+                        instance.memory_capacity -= task.requested_memory
                         instance.list_of_tasks.append(task)
                         break
                     # if no eligible instances then spin up new instance
-                    else:
+                    elif len(self.instance_pool) <= 500:
                         new_instance = Instance(self.unique_id_pointer, instance.machine_id)
                         self.unique_id_pointer += 1
                         new_instance.list_of_tasks.append(task)
@@ -312,7 +310,7 @@ class Scheduler():
                         new_instance.memory_capacity -= task.requested_memory
                         
                         self.instance_pool.append(new_instance)
-                                                    
+                        break
     def baseline(self, total_time, interval) -> None:
         self.unique_id_pointer = 35
         
@@ -329,7 +327,7 @@ class Scheduler():
             print("Current timestamp is: ", i)
             self.task_queue = []
             
-            while task_csv_pointer < len(task_csv) and task_csv.loc[task_csv_pointer]['starttime'] < i-1 and task_csv.loc[task_csv_pointer]['starttime'] <= i:
+            while task_csv_pointer < len(task_csv) and task_csv.loc[task_csv_pointer]['starttime'] <= i:
                 self.task_queue.append(task_csv.loc[task_csv_pointer])
                 task_csv_pointer += 1
                 
@@ -343,13 +341,13 @@ def main() -> None:
     # machine = Instance(16)
     sched = Scheduler()
     
-    print("-----Running Stratus Algo-----")
-    sched.stratus(test_duration, interval)    
-    print("-----Finished Stratus Algo-----")
+    # print("-----Running Stratus Algo-----")
+    # sched.stratus(test_duration, interval)    
+    # print("-----Finished Stratus Algo-----")
     
-    # print("-----Running Baseline Algo-----")
-    # sched.baseline(fourteen_days, interval)
-    # print("-----Finished Baseline Algo-----")
+    print("-----Running Baseline Algo-----")
+    sched.baseline(test_duration, interval)
+    print("-----Finished Baseline Algo-----")
     
     # timestamp_array = [i for i in range(1, fourteen_days, interval)]
     
