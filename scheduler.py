@@ -7,15 +7,7 @@ import csv
 import time
 import pandas as pd
 
-class Scheduler():
-    
-    machine: Instance
-    
-    core_capacity: float
-    memory_capacity: float
-    cpu_usage: float
-    memory_usage: float
-    
+class Scheduler():    
     task_bins: list[list[Task]]
     instance_bins: list[list[Instance]]
     
@@ -28,7 +20,6 @@ class Scheduler():
     baseline_core_log: list[float]
     baseline_memory_log: list[float]
     
-    vm_types: pd.DataFrame
     no_of_bins = math.floor(math.log(1209600, 2)) + 1
     instance_pool_size = 35
     unique_id_pointer = 35
@@ -36,12 +27,9 @@ class Scheduler():
     def __init__(self) -> None:
         self.task_queue = []
         self.task_bins = [[] for _ in range(self.no_of_bins)]
-        
         self.instance_bins = [[] for _ in range(self.no_of_bins)]
         self.instance_pool = [Instance(i, i) for i in range(self.instance_pool_size)]
-        
-        self.vm_types = pd.read_csv("../outputs/vmlist3.csv")
-        
+                
     def obtain_bin_index(self, bins, runtime) -> int:
         runtime = float(runtime)
         if runtime < 1:
@@ -289,7 +277,6 @@ class Scheduler():
         for i in range(1, total_time, interval):
             print("Current timestamp is: ", i)
             self.task_queue = []
-            self.instance_queue = []
             
             while task_csv_pointer < len(task_csv) and task_csv.loc[task_csv_pointer]['starttime'] <= i:
                 self.task_queue.append(task_csv.loc[task_csv_pointer])
