@@ -187,7 +187,6 @@ class Scheduler():
         
         # for each candidate group i do 
         if len(unassigned_task_list) > 0:
-            print("Entering scaling")
             while candidate_group_flag == 0: 
                 unassigned_task_list_pointer = 0
                 cumulative_task_memory = 0
@@ -252,12 +251,9 @@ class Scheduler():
     def free_expired_tasks_and_instances_stratus(self, timestamp) -> None:
         for bin in self.instance_bins:
             for instance in bin:
-                if instance.endtime <= timestamp or len(instance.list_of_tasks) == 0:
-                    added_core = instance.requested_core + self.core_capacity
-                    added_memory = instance.requested_memory + self.memory_capacity
-                    if added_core <= 1 and added_memory <= 1:
-                        self.core_capacity += instance.requested_core
-                        self.memory_capacity += instance.requested_memory
+                if len(instance.list_of_tasks) == 0:
+                    instance_unique_id = instance.unique_id
+                    self.instance_pool[:] = [instance for instance in self.instance_pool if instance.unique_id != instance_unique_id]
                         
         for bin in self.task_bins:
             bin[:] = [task for task in bin if task.end_time > timestamp]
@@ -266,14 +262,6 @@ class Scheduler():
         for bin in self.instance_bins:
             bin[:] = [instance for instance in bin if instance.endtime > timestamp]    
             bin[:] = [instance for instance in bin if len(instance.list_of_tasks) > 0]
-            
-        for bin in self.instance_bins:
-            for index, instance in enumerate(bin):
-                remaining_time = instance.runtime - timestamp
-                current_index = self.obtain_bin_index(self.instance_bins, instance.runtime)
-                new_index = self.obtain_bin_index(self.instance_bins, remaining_time)
-                if current_index != new_index:
-                    self.instance_bins[new_index].append(bin.pop(index))
                     
     def free_expired_tasks_and_instances_baseline(self, timestamp) -> None:
         for instance in self.instance_bins[0]:
