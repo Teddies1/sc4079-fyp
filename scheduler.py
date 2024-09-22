@@ -260,7 +260,6 @@ class Scheduler():
             bin[:] = [task for task in bin if task.assigned == False]
 
         for bin in self.instance_bins:
-            bin[:] = [instance for instance in bin if instance.endtime > timestamp]    
             bin[:] = [instance for instance in bin if len(instance.list_of_tasks) > 0]
                     
     def free_expired_tasks_and_instances_baseline(self, timestamp) -> None:
