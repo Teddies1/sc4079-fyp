@@ -318,14 +318,26 @@ class Scheduler():
         for task in self.task_bins[0]:
             if task.assigned == False:
                 for instance in self.instance_bins[0]:
-                    if instance.runtime >= task.runtime and len(instance.list_of_tasks) == 0 and instance.requested_core <= self.core_capacity and instance.requested_memory <= self.memory_capacity:
+                    #check for eligible instances
+                    if task.requested_core <= instance.core_capacity and task.requested_memory <= instance.memory_capacity:
                         task.assigned = True
                         #add task’s requested CPU and memory to memory capacity      
                         if len(instance.list_of_tasks) == 0:  
-                            self.core_capacity -= instance.requested_core
-                            self.memory_capacity -= instance.requested_memory 
+                            instance.core_capacity -= task.requested_core
+                            instance.memory_capacity -= task.requested_memory
                         instance.list_of_tasks.append(task)
                         break
+                    # if no eligible instances then spin up new instance
+                    else:
+                        new_instance = Instance(self.unique_id_pointer, instance.machine_id)
+                        self.unique_id_pointer += 1
+                        new_instance.list_of_tasks.append(task)
+                        new_instance.max_runtime = new_instance.get_max_runtime()
+                        new_instance.core_capacity -= task.requested_core
+                        new_instance.memory_capacity -= task.requested_memory
+                        
+                        self.instance_pool.append(new_instance)
+                        
                                                     
     def baseline(self, total_time, interval) -> None:
         self.memory_capacity = 1
