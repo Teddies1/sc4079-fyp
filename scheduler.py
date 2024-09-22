@@ -73,25 +73,28 @@ class Scheduler():
             self.instance_bins[runtime_bin_index].append(instance)
             
     def free_expired_tasks_and_instances_stratus(self, timestamp) -> None:
+        for instance in self.instance_pool:
+            instance.list_of_tasks[:] = [task for task in instance.list_of_tasks if task.end_time > timestamp]
+            
         for bin in self.instance_bins:
             for instance in bin:
                 if len(instance.list_of_tasks) == 0:
                     instance_unique_id = instance.unique_id
+                    print("empty instance with unique_id: ", instance_unique_id)
                     self.instance_pool[:] = [instance for instance in self.instance_pool if instance.unique_id != instance_unique_id]
-                else:
-                    instance.list_of_tasks[:] = [task for task in instance.list_of_tasks if task.end_time > timestamp]
-                        
+                    
         for bin in self.task_bins:
             bin[:] = [task for task in bin if task.end_time > timestamp]
             bin[:] = [task for task in bin if task.assigned == False]
             
-    def free_expired_tasks_and_instances_baseline(self, timestamp) -> None:
+    def free_expired_tasks_and_instances_baseline(self, timestamp) -> None:    
+        for instance in self.instance_pool:
+            instance.list_of_tasks[:] = [task for task in instance.list_of_tasks if task.end_time > timestamp]
+            
         for instance in self.instance_bins[0]:
             if len(instance.list_of_tasks) == 0:
                 instance_unique_id = instance.unique_id
                 self.instance_pool[:] = [instance for instance in self.instance_pool if instance.unique_id != instance_unique_id]
-            else:
-                instance.list_of_tasks[:] = [task for task in instance.list_of_tasks if task.end_time > timestamp]
         
         self.task_bins[0][:] = [task for task in self.task_bins[0] if task.end_time > timestamp]
         self.task_bins[0][:] = [task for task in self.task_bins[0] if task.assigned == False]
@@ -251,7 +254,10 @@ class Scheduler():
                     normalised_constraining_resouce = constraining_resource / scaler_min_memory
                 # note: since cost is proportional to runtime, we use normalised runtime for our cost
                 normalised_runtime = instance.max_runtime / scaler_max_runtime
-                score = normalised_constraining_resouce / normalised_runtime
+                if normalised_runtime > 0:
+                    score = normalised_constraining_resouce / normalised_runtime
+                else:
+                    score = 0
                 
                 if score > max_efficiency_score:
                     max_efficiency_score = score
