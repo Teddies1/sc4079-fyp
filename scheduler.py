@@ -71,6 +71,32 @@ class Scheduler():
                 runtime_bin_index = 0
             # runtime_bin_index = instance.machine_id % len(self.instance_bins)
             self.instance_bins[runtime_bin_index].append(instance)
+            
+    def free_expired_tasks_and_instances_stratus(self, timestamp) -> None:
+        for bin in self.instance_bins:
+            for instance in bin:
+                if len(instance.list_of_tasks) == 0:
+                    instance_unique_id = instance.unique_id
+                    self.instance_pool[:] = [instance for instance in self.instance_pool if instance.unique_id != instance_unique_id]
+                        
+        for bin in self.task_bins:
+            bin[:] = [task for task in bin if task.end_time > timestamp]
+            bin[:] = [task for task in bin if task.assigned == False]
+            
+    def free_expired_tasks_and_instances_baseline(self, timestamp) -> None:
+        for instance in self.instance_bins[0]:
+            if instance.endtime <= timestamp or len(instance.list_of_tasks) == 0:
+                added_core = instance.requested_core + self.core_capacity
+                added_memory = instance.requested_memory + self.memory_capacity
+                if added_core <= 1 and added_memory <= 1:
+                    self.core_capacity += instance.requested_core
+                    self.memory_capacity += instance.requested_memory
+                    
+        self.instance_bins[0][:] = [instance for instance in self.instance_bins[0] if instance.endtime > timestamp]    
+        self.instance_bins[0][:] = [instance for instance in self.instance_bins[0] if len(instance.list_of_tasks) > 0]
+        
+        self.task_bins[0][:] = [task for task in self.task_bins[0] if task.end_time > timestamp]
+        self.task_bins[0][:] = [task for task in self.task_bins[0] if task.assigned == False]
     
     def packer(self, list_of_tasks) -> None:
         list_of_tasks.sort(key=lambda x: float(x[5]), reverse=True)
@@ -245,36 +271,7 @@ class Scheduler():
             new_max_instance.max_runtime = new_max_instance.get_max_runtime()
             new_max_instance.core_capacity -= max_cumulative_cpu
             new_max_instance.memory_capacity -= max_cumulative_memory
-            self.instance_pool.append(new_max_instance)
-                        
-    def free_expired_tasks_and_instances_stratus(self, timestamp) -> None:
-        for bin in self.instance_bins:
-            for instance in bin:
-                if len(instance.list_of_tasks) == 0:
-                    instance_unique_id = instance.unique_id
-                    self.instance_pool[:] = [instance for instance in self.instance_pool if instance.unique_id != instance_unique_id]
-                        
-        for bin in self.task_bins:
-            bin[:] = [task for task in bin if task.end_time > timestamp]
-            bin[:] = [task for task in bin if task.assigned == False]
-
-        for bin in self.instance_bins:
-            bin[:] = [instance for instance in bin if len(instance.list_of_tasks) > 0]
-                    
-    def free_expired_tasks_and_instances_baseline(self, timestamp) -> None:
-        for instance in self.instance_bins[0]:
-            if instance.endtime <= timestamp or len(instance.list_of_tasks) == 0:
-                added_core = instance.requested_core + self.core_capacity
-                added_memory = instance.requested_memory + self.memory_capacity
-                if added_core <= 1 and added_memory <= 1:
-                    self.core_capacity += instance.requested_core
-                    self.memory_capacity += instance.requested_memory
-                    
-        self.instance_bins[0][:] = [instance for instance in self.instance_bins[0] if instance.endtime > timestamp]    
-        self.instance_bins[0][:] = [instance for instance in self.instance_bins[0] if len(instance.list_of_tasks) > 0]
-        
-        self.task_bins[0][:] = [task for task in self.task_bins[0] if task.end_time > timestamp]
-        self.task_bins[0][:] = [task for task in self.task_bins[0] if task.assigned == False]
+            self.instance_pool.append(new_max_instance)            
         
     def stratus(self, total_time, interval) -> None:
         self.memory_capacity = 1
