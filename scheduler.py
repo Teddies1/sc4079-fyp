@@ -278,14 +278,10 @@ class Scheduler():
             self.instance_pool.append(new_max_instance)            
         
     def stratus(self, total_time, interval) -> None:
-        self.memory_capacity = 1
-        self.core_capacity = 1
+        self.unique_id_pointer = 35
         
-        task_csv = pd.read_csv("../outputs/tasklist2.csv")
-        instance_csv = pd.read_csv("../outputs/assignedinstancelist2.csv")
-        
+        task_csv = pd.read_csv("../outputs/tasklist2.csv")        
         task_csv_pointer = 0
-        instance_csv_pointer = 0
         
         self.stratus_core_log = []
         self.stratus_memory_log = []
@@ -299,16 +295,8 @@ class Scheduler():
                 self.task_queue.append(task_csv.loc[task_csv_pointer])
                 task_csv_pointer += 1
                     
-            while instance_csv_pointer < len(instance_csv) and instance_csv.loc[instance_csv_pointer]['starttime'] < (i-1) and instance_csv.loc[instance_csv_pointer]['starttime'] <= i:
-                self.instance_queue.append(instance_csv.loc[instance_csv_pointer])
-                instance_csv_pointer += 1
-                    
             self.packer(list_of_tasks=self.task_queue)    
-            self.scaling()
-            
-            # self.stratus_core_log.append(1 - self.core_capacity)
-            # self.stratus_memory_log.append(1 - self.memory_capacity)
-            
+            self.scaling()          
             self.free_expired_tasks_and_instances_stratus(i)
         
     def baseline_algo(self, list_of_tasks) -> None:
@@ -337,20 +325,15 @@ class Scheduler():
                         new_instance.memory_capacity -= task.requested_memory
                         
                         self.instance_pool.append(new_instance)
-                        
                                                     
     def baseline(self, total_time, interval) -> None:
-        self.memory_capacity = 1
-        self.core_capacity = 1
+        self.unique_id_pointer = 35
         
         self.instance_bins = [[]]
         self.task_bins = [[]]
         
-        task_csv = pd.read_csv("../outputs/tasklist2.csv")
-        instance_csv = pd.read_csv("../outputs/assignedinstancelist2.csv")
-        
+        task_csv = pd.read_csv("../outputs/tasklist2.csv")        
         task_csv_pointer = 0
-        instance_csv_pointer = 0
         
         self.baseline_core_log = []
         self.baseline_memory_log = []
@@ -358,21 +341,12 @@ class Scheduler():
         for i in range(1, total_time, interval):
             print("Current timestamp is: ", i)
             self.task_queue = []
-            self.instance_queue = []
             
             while task_csv_pointer < len(task_csv) and task_csv.loc[task_csv_pointer]['starttime'] < i-1 and task_csv.loc[task_csv_pointer]['starttime'] <= i:
                 self.task_queue.append(task_csv.loc[task_csv_pointer])
                 task_csv_pointer += 1
-                    
-            while instance_csv_pointer < len(instance_csv) and instance_csv.loc[instance_csv_pointer]['starttime'] < (i-1) and instance_csv.loc[instance_csv_pointer]['starttime'] <= i:
-                self.instance_queue.append(instance_csv.loc[instance_csv_pointer])
-                instance_csv_pointer += 1
                 
             self.baseline_algo(list_of_tasks=self.task_queue)
-            
-            self.baseline_core_log.append(1 - self.core_capacity)
-            self.baseline_memory_log.append(1 - self.memory_capacity)
-            
             self.free_expired_tasks_and_instances_baseline(i)
         
 def main() -> None:
