@@ -78,6 +78,8 @@ class Scheduler():
                 if len(instance.list_of_tasks) == 0:
                     instance_unique_id = instance.unique_id
                     self.instance_pool[:] = [instance for instance in self.instance_pool if instance.unique_id != instance_unique_id]
+                else:
+                    instance.list_of_tasks[:] = [task for task in instance.list_of_tasks if task.end_time > timestamp]
                         
         for bin in self.task_bins:
             bin[:] = [task for task in bin if task.end_time > timestamp]
@@ -85,15 +87,11 @@ class Scheduler():
             
     def free_expired_tasks_and_instances_baseline(self, timestamp) -> None:
         for instance in self.instance_bins[0]:
-            if instance.endtime <= timestamp or len(instance.list_of_tasks) == 0:
-                added_core = instance.requested_core + self.core_capacity
-                added_memory = instance.requested_memory + self.memory_capacity
-                if added_core <= 1 and added_memory <= 1:
-                    self.core_capacity += instance.requested_core
-                    self.memory_capacity += instance.requested_memory
-                    
-        self.instance_bins[0][:] = [instance for instance in self.instance_bins[0] if instance.endtime > timestamp]    
-        self.instance_bins[0][:] = [instance for instance in self.instance_bins[0] if len(instance.list_of_tasks) > 0]
+            if len(instance.list_of_tasks) == 0:
+                instance_unique_id = instance.unique_id
+                self.instance_pool[:] = [instance for instance in self.instance_pool if instance.unique_id != instance_unique_id]
+            else:
+                instance.list_of_tasks[:] = [task for task in instance.list_of_tasks if task.end_time > timestamp]
         
         self.task_bins[0][:] = [task for task in self.task_bins[0] if task.end_time > timestamp]
         self.task_bins[0][:] = [task for task in self.task_bins[0] if task.assigned == False]
