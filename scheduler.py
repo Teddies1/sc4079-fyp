@@ -184,7 +184,6 @@ class Scheduler():
         unassigned_task_list.sort(key=lambda x: x.runtime, reverse=True)
         candidate_group_flag = 0
         candidate_group_size = 1
-        
         # for each candidate group i do 
         if len(unassigned_task_list) > 0:
             while candidate_group_flag == 0: 
@@ -295,7 +294,7 @@ class Scheduler():
             self.task_queue = []
             self.instance_queue = []
             
-            while task_csv_pointer < len(task_csv) and task_csv.loc[task_csv_pointer]['starttime'] < i-1 and task_csv.loc[task_csv_pointer]['starttime'] <= i:
+            while task_csv_pointer < len(task_csv) and task_csv.loc[task_csv_pointer]['starttime'] <= i:
                 self.task_queue.append(task_csv.loc[task_csv_pointer])
                 task_csv_pointer += 1
                     
@@ -309,7 +308,7 @@ class Scheduler():
             # self.stratus_core_log.append(1 - self.core_capacity)
             # self.stratus_memory_log.append(1 - self.memory_capacity)
             
-            # self.free_expired_tasks_and_instances_stratus(i)
+            self.free_expired_tasks_and_instances_stratus(i)
         
     def baseline_algo(self, list_of_tasks) -> None:
         self.load_tasks_to_bins(list_of_tasks, "baseline")
