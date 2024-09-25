@@ -62,6 +62,7 @@ class Scheduler():
             
     def free_expired_tasks_and_instances_stratus(self, timestamp) -> None:
         for instance in self.instance_pool:
+            instance.list_of_tasks.sort(key=lambda x: x.end_time)
             instance.list_of_tasks[:] = [task for task in instance.list_of_tasks if task.end_time > timestamp]
             
         for bin in self.instance_bins:
@@ -77,8 +78,10 @@ class Scheduler():
             
     def free_expired_tasks_and_instances_baseline(self, timestamp) -> None:    
         for instance in self.instance_pool:
+            instance.list_of_tasks.sort(key=lambda x: x.end_time)
             instance.list_of_tasks[:] = [task for task in instance.list_of_tasks if task.end_time > timestamp]
             
+        self.instance_bins[0].sort(key=lambda x: len(x.list_of_tasks))
         for instance in self.instance_bins[0]:
             if len(instance.list_of_tasks) == 0:
                 instance_unique_id = instance.unique_id
