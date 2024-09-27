@@ -78,7 +78,6 @@ class Scheduler():
             for instance in bin:
                 if len(instance.list_of_tasks) == 0:
                     instance_unique_id = instance.unique_id
-                    print("empty instance with unique_id: ", instance_unique_id)
                     self.instance_pool[:] = [instance for instance in self.instance_pool if instance.unique_id != instance_unique_id]
                     
         for bin in self.task_bins:
@@ -299,27 +298,33 @@ class Scheduler():
                     
             self.packer(list_of_tasks=self.task_queue)    
             self.scaling()          
+            
+            # unassigned_tasks = 0
+            # total_tasks = 0
+            # for bin in self.task_bins:
+            #     for task in bin:
+            #         if task.assigned == True:
+            #             unassigned_tasks += 1
+            #         total_tasks += 1
+            # print(unassigned_tasks, total_tasks)
+            
             self.free_expired_tasks_and_instances_stratus(i)
             
             core_sum = 0
             mem_sum = 0
             runtime_sum = 0
-            unassigned_tasks = 0
-            total_tasks = 0
             instance_pool_length = len(self.instance_pool)
+            
             for instance in self.instance_pool:
                 core_sum += 1 - instance.core_capacity
                 mem_sum += 1 - instance.memory_capacity
                 runtime_sum += instance.max_runtime
-                for task in instance.list_of_tasks:
-                    if task.assigned == False:
-                        unassigned_tasks += 1
-                    total_tasks += 1
+                
             self.average_stratus_core_log.append(core_sum / instance_pool_length)
             self.average_stratus_memory_log.append(mem_sum / instance_pool_length)
             self.average_max_runtime_stratus_log.append(runtime_sum / instance_pool_length)
             self.number_of_instances_stratus_log.append(instance_pool_length)
-            self.percentage_assigned_tasks_stratus_log.append(unassigned_tasks / total_tasks)
+            # self.percentage_assigned_tasks_stratus_log.append(unassigned_tasks / total_tasks)
             
     def baseline_algo(self, list_of_tasks) -> None:
         self.load_tasks_to_bins(list_of_tasks, "baseline")
@@ -371,27 +376,31 @@ class Scheduler():
                 task_csv_pointer += 1
                 
             self.baseline_algo(list_of_tasks=self.task_queue)
+            # unassigned_tasks = 0
+            # total_tasks = 0
+            # for bin in self.task_bins:
+            #     for task in bin:
+            #         if task.assigned == True:
+            #             unassigned_tasks += 1
+            #         total_tasks += 1
+            # print(unassigned_tasks, total_tasks)
             self.free_expired_tasks_and_instances_baseline(i)
 
             core_sum = 0
             mem_sum = 0
             runtime_sum = 0
-            unassigned_tasks = 0
-            total_tasks = 0
             instance_pool_length = len(self.instance_pool)
+            
             for instance in self.instance_pool:
                 core_sum += (1 - instance.core_capacity)
                 mem_sum += (1 - instance.memory_capacity)
                 runtime_sum += instance.max_runtime
-                for task in instance.list_of_tasks:
-                    if task.assigned == False:
-                        unassigned_tasks += 1
-                    total_tasks += 1
+                
             self.average_baseline_core_log.append(core_sum / instance_pool_length)
             self.average_baseline_memory_log.append(mem_sum / instance_pool_length)
             self.average_max_runtime_baseline_log.append(runtime_sum / instance_pool_length)
             self.number_of_instances_baseline_log.append(instance_pool_length)
-            self.percentage_assigned_tasks_baseline_log.append(unassigned_tasks / total_tasks)
+            # self.percentage_assigned_tasks_baseline_log.append(unassigned_tasks / total_tasks)
             
 def main() -> None:
     fourteen_days = 1209600
@@ -410,7 +419,7 @@ def main() -> None:
     
     timestamp_array = [i for i in range(1, fourteen_days, interval)]
     
-    print("----Writing to CSV-----")
+    print("-----Writing to CSV-----")
     with open(f"../logging/core_usage.csv", "w") as f:
         writer = csv.writer(f)
         writer.writerow(["timestamp", "avg_baseline_core_util", "avg_stratus_core_util"])
@@ -421,6 +430,21 @@ def main() -> None:
         writer.writerow(["timestamp", "avg_baseline_memory_util", "avg_stratus_memory_util"])
         writer.writerows(zip(timestamp_array, sched.average_baseline_memory_log, sched.average_stratus_memory_log))
         
-    print("----Finished Writing to CSV-----")    
+    with open(f"../logging/avg_runtime.csv", "w") as f:
+        writer = csv.writer(f)
+        writer.writerow(["timestamp", "avg_baseline_runtime", "avg_stratus_runtime"])
+        writer.writerows(zip(timestamp_array, sched.average_max_runtime_baseline_log, sched.average_max_runtime_stratus_log))
+        
+    with open(f"../logging/num_instances.csv", "w") as f:
+        writer = csv.writer(f)
+        writer.writerow(["timestamp", "num_instances_baseline", "num_instances_stratus"])
+        writer.writerows(zip(timestamp_array, sched.number_of_instances_baseline_log, sched.number_of_instances_stratus_log))
+        
+    # with open(f"../logging/pct_unassigned_tasks.csv", "w") as f:
+    #     writer = csv.writer(f)
+    #     writer.writerow(["timestamp", "pct_unassigned_baseline", "pct_unassigned_stratus"])
+    #     writer.writerows(zip(timestamp_array, sched.percentage_assigned_tasks_baseline_log, sched.percentage_assigned_tasks_stratus_log))
+        
+    print("-----Finished Writing to CSV-----")    
 if __name__ == "__main__":
     main()
