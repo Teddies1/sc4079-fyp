@@ -14,11 +14,20 @@ class Scheduler():
     task_queue: list[Task]
     instance_pool: list[Instance]
     
-    stratus_core_log: list[float]
-    stratus_memory_log: list[float]
+    average_stratus_core_log: list[float]
+    average_stratus_memory_log: list[float]
     
-    baseline_core_log: list[float]
-    baseline_memory_log: list[float]
+    average_baseline_core_log: list[float]
+    average_baseline_memory_log: list[float]
+    
+    number_of_instances_stratus_log: list[int]
+    number_of_instances_baseline_log: list[int]
+    
+    percentage_assigned_tasks_stratus_log: list[float]
+    percentage_assigned_tasks_baseline_log: list[float]
+    
+    average_max_runtime_stratus_log: list[float]
+    average_max_runtime_baseline_log: list[float]
     
     no_of_bins = math.floor(math.log(1209600, 2)) + 1
     instance_pool_size = 35
@@ -274,8 +283,11 @@ class Scheduler():
         task_csv = pd.read_csv("../outputs/tasklist2.csv")        
         task_csv_pointer = 0
         
-        self.stratus_core_log = []
-        self.stratus_memory_log = []
+        self.average_stratus_core_log = []
+        self.average_stratus_memory_log = []
+        self.average_max_runtime_stratus_log = []
+        self.percentage_assigned_tasks_stratus_log = []
+        self.number_of_instances_stratus_log = []
         
         for i in range(1, total_time, interval):
             print("Current timestamp is: ", i)
@@ -288,7 +300,27 @@ class Scheduler():
             self.packer(list_of_tasks=self.task_queue)    
             self.scaling()          
             self.free_expired_tasks_and_instances_stratus(i)
-        
+            
+            core_sum = 0
+            mem_sum = 0
+            runtime_sum = 0
+            unassigned_tasks = 0
+            total_tasks = 0
+            instance_pool_length = len(self.instance_pool)
+            for instance in self.instance_pool:
+                core_sum += 1 - instance.core_capacity
+                mem_sum += 1 - instance.memory_capacity
+                runtime_sum += instance.max_runtime
+                for task in instance.list_of_tasks:
+                    if task.assigned == False:
+                        unassigned_tasks += 1
+                    total_tasks += 1
+            self.average_stratus_core_log.append(core_sum / instance_pool_length)
+            self.average_stratus_memory_log.append(mem_sum / instance_pool_length)
+            self.average_max_runtime_stratus_log.append(runtime_sum / instance_pool_length)
+            self.number_of_instances_stratus_log.append(instance_pool_length)
+            self.percentage_assigned_tasks_stratus_log.append(unassigned_tasks / total_tasks)
+            
     def baseline_algo(self, list_of_tasks) -> None:
         self.load_tasks_to_bins(list_of_tasks, "baseline")
         self.update_instance_bins("baseline")
@@ -314,6 +346,7 @@ class Scheduler():
                         
                         self.instance_pool.append(new_instance)
                         break
+                    
     def baseline(self, total_time, interval) -> None:
         self.unique_id_pointer = 35
         
@@ -323,8 +356,11 @@ class Scheduler():
         task_csv = pd.read_csv("../outputs/tasklist2.csv")        
         task_csv_pointer = 0
         
-        self.baseline_core_log = []
-        self.baseline_memory_log = []
+        self.average_baseline_core_log = []
+        self.average_baseline_memory_log = []
+        self.average_max_runtime_baseline_log = []
+        self.percentage_assigned_tasks_baseline_log = []
+        self.number_of_instances_baseline_log = []
         
         for i in range(1, total_time, interval):
             print("Current timestamp is: ", i)
@@ -336,7 +372,27 @@ class Scheduler():
                 
             self.baseline_algo(list_of_tasks=self.task_queue)
             self.free_expired_tasks_and_instances_baseline(i)
-        
+
+            core_sum = 0
+            mem_sum = 0
+            runtime_sum = 0
+            unassigned_tasks = 0
+            total_tasks = 0
+            instance_pool_length = len(self.instance_pool)
+            for instance in self.instance_pool:
+                core_sum += (1 - instance.core_capacity)
+                mem_sum += (1 - instance.memory_capacity)
+                runtime_sum += instance.max_runtime
+                for task in instance.list_of_tasks:
+                    if task.assigned == False:
+                        unassigned_tasks += 1
+                    total_tasks += 1
+            self.average_baseline_core_log.append(core_sum / instance_pool_length)
+            self.average_baseline_memory_log.append(mem_sum / instance_pool_length)
+            self.average_max_runtime_baseline_log.append(runtime_sum / instance_pool_length)
+            self.number_of_instances_baseline_log.append(instance_pool_length)
+            self.percentage_assigned_tasks_baseline_log.append(unassigned_tasks / total_tasks)
+            
 def main() -> None:
     fourteen_days = 1209600
     test_duration = 20000
@@ -344,26 +400,27 @@ def main() -> None:
     # machine = Instance(16)
     sched = Scheduler()
     
-    # print("-----Running Stratus Algo-----")
-    # sched.stratus(test_duration, interval)    
-    # print("-----Finished Stratus Algo-----")
+    print("-----Running Stratus Algo-----")
+    sched.stratus(test_duration, interval)    
+    print("-----Finished Stratus Algo-----")
     
     print("-----Running Baseline Algo-----")
     sched.baseline(test_duration, interval)
     print("-----Finished Baseline Algo-----")
     
-    # timestamp_array = [i for i in range(1, fourteen_days, interval)]
+    timestamp_array = [i for i in range(1, fourteen_days, interval)]
     
-    # print("----Writing to CSV-----")
-    # with open(f"../logging/core_usage.csv", "w") as f:
-    #     writer = csv.writer(f)
-    #     writer.writerow(["timestamp", "baseline_core_util", "stratus_core_util"])
-    #     writer.writerows(zip(timestamp_array, sched.baseline_core_log, sched.stratus_core_log))
+    print("----Writing to CSV-----")
+    with open(f"../logging/core_usage.csv", "w") as f:
+        writer = csv.writer(f)
+        writer.writerow(["timestamp", "avg_baseline_core_util", "avg_stratus_core_util"])
+        writer.writerows(zip(timestamp_array, sched.average_baseline_core_log, sched.average_stratus_core_log))
     
-    # with open(f"../logging/memory_usage.csv", "w") as f:
-    #     writer = csv.writer(f)
-    #     writer.writerow(["timestamp", "baseline_memory_util", "stratus_memory_util"])
-    #     writer.writerows(zip(timestamp_array, sched.baseline_memory_log, sched.stratus_memory_log))
-    # print("----Finished Writing to CSV-----")    
+    with open(f"../logging/memory_usage.csv", "w") as f:
+        writer = csv.writer(f)
+        writer.writerow(["timestamp", "avg_baseline_memory_util", "avg_stratus_memory_util"])
+        writer.writerows(zip(timestamp_array, sched.average_baseline_memory_log, sched.average_stratus_memory_log))
+        
+    print("----Finished Writing to CSV-----")    
 if __name__ == "__main__":
     main()
