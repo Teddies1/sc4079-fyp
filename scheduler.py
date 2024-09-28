@@ -340,17 +340,18 @@ class Scheduler():
                         instance.memory_capacity -= task.requested_memory
                         instance.list_of_tasks.append(task)
                         break
-                    # if no eligible instances then spin up new instance
-                    elif len(self.instance_pool) <= 500:
-                        new_instance = Instance(self.unique_id_pointer, instance.machine_id)
-                        self.unique_id_pointer += 1
-                        new_instance.list_of_tasks.append(task)
-                        new_instance.max_runtime = new_instance.get_max_runtime()
-                        new_instance.core_capacity -= task.requested_core
-                        new_instance.memory_capacity -= task.requested_memory
-                        
-                        self.instance_pool.append(new_instance)
-                        break
+                    # if no eligible instances then spin up new instance'
+                if task.assigned == False:
+                    new_instance = Instance(self.unique_id_pointer, instance.machine_id)
+                    self.unique_id_pointer += 1
+                    new_instance.list_of_tasks.append(task)
+                    new_instance.max_runtime = new_instance.get_max_runtime()
+                    new_instance.core_capacity -= task.requested_core
+                    new_instance.memory_capacity -= task.requested_memory
+                    
+                    self.instance_pool.append(new_instance)
+            
+                
                     
     def baseline(self, total_time, interval) -> None:
         self.unique_id_pointer = 35
@@ -409,36 +410,36 @@ def main() -> None:
     # machine = Instance(16)
     sched = Scheduler()
     
-    print("-----Running Stratus Algo-----")
-    sched.stratus(test_duration, interval)    
-    print("-----Finished Stratus Algo-----")
+    # print("-----Running Stratus Algo-----")
+    # sched.stratus(fourteen_days, interval)    
+    # print("-----Finished Stratus Algo-----")
     
     print("-----Running Baseline Algo-----")
-    sched.baseline(test_duration, interval)
+    sched.baseline(fourteen_days, interval)
     print("-----Finished Baseline Algo-----")
     
     timestamp_array = [i for i in range(1, fourteen_days, interval)]
     
-    print("-----Writing to CSV-----")
-    with open(f"../logging/core_usage.csv", "w") as f:
-        writer = csv.writer(f)
-        writer.writerow(["timestamp", "avg_baseline_core_util", "avg_stratus_core_util"])
-        writer.writerows(zip(timestamp_array, sched.average_baseline_core_log, sched.average_stratus_core_log))
+    # print("-----Writing to CSV-----")
+    # with open(f"../logging/core_usage.csv", "w") as f:
+    #     writer = csv.writer(f)
+    #     writer.writerow(["timestamp", "avg_baseline_core_util", "avg_stratus_core_util"])
+    #     writer.writerows(zip(timestamp_array, sched.average_baseline_core_log, sched.average_stratus_core_log))
     
-    with open(f"../logging/memory_usage.csv", "w") as f:
-        writer = csv.writer(f)
-        writer.writerow(["timestamp", "avg_baseline_memory_util", "avg_stratus_memory_util"])
-        writer.writerows(zip(timestamp_array, sched.average_baseline_memory_log, sched.average_stratus_memory_log))
+    # with open(f"../logging/memory_usage.csv", "w") as f:
+    #     writer = csv.writer(f)
+    #     writer.writerow(["timestamp", "avg_baseline_memory_util", "avg_stratus_memory_util"])
+    #     writer.writerows(zip(timestamp_array, sched.average_baseline_memory_log, sched.average_stratus_memory_log))
         
-    with open(f"../logging/avg_runtime.csv", "w") as f:
-        writer = csv.writer(f)
-        writer.writerow(["timestamp", "avg_baseline_runtime", "avg_stratus_runtime"])
-        writer.writerows(zip(timestamp_array, sched.average_max_runtime_baseline_log, sched.average_max_runtime_stratus_log))
+    # with open(f"../logging/avg_runtime.csv", "w") as f:
+    #     writer = csv.writer(f)
+    #     writer.writerow(["timestamp", "avg_baseline_runtime", "avg_stratus_runtime"])
+    #     writer.writerows(zip(timestamp_array, sched.average_max_runtime_baseline_log, sched.average_max_runtime_stratus_log))
         
-    with open(f"../logging/num_instances.csv", "w") as f:
-        writer = csv.writer(f)
-        writer.writerow(["timestamp", "num_instances_baseline", "num_instances_stratus"])
-        writer.writerows(zip(timestamp_array, sched.number_of_instances_baseline_log, sched.number_of_instances_stratus_log))
+    # with open(f"../logging/num_instances.csv", "w") as f:
+    #     writer = csv.writer(f)
+    #     writer.writerow(["timestamp", "num_instances_baseline", "num_instances_stratus"])
+    #     writer.writerows(zip(timestamp_array, sched.number_of_instances_baseline_log, sched.number_of_instances_stratus_log))
         
     # with open(f"../logging/pct_unassigned_tasks.csv", "w") as f:
     #     writer = csv.writer(f)
