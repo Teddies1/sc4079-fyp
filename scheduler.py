@@ -61,6 +61,7 @@ class Scheduler():
             
     def update_instance_bins(self, algo):
         self.instance_bins = [[] for _ in range(self.no_of_bins)]
+        
         for instance in self.instance_pool:
             instance.max_runtime = instance.get_max_runtime()
             if algo == "stratus":
@@ -85,10 +86,7 @@ class Scheduler():
             
     def free_expired_tasks_and_instances_baseline(self, timestamp) -> None:    
         for instance in self.instance_pool:
-            # instance.list_of_tasks.sort(key=lambda x: x.end_time)
             instance.list_of_tasks[:] = [task for task in instance.list_of_tasks if task.end_time > timestamp]
-        
-        self.instance_pool[:] = [instance for instance in self.instance_pool if len(instance.list_of_tasks) > 0]
         
         self.task_bins[0][:] = [task for task in self.task_bins[0] if task.end_time > timestamp]
         self.task_bins[0][:] = [task for task in self.task_bins[0] if task.assigned == False]
@@ -312,27 +310,26 @@ class Scheduler():
         
         for task in self.task_bins[0]:
             if task.assigned == False:
-                if len(self.instance_bins[0]) > 0:
-                    for instance in self.instance_bins[0]:
-                        #check for eligible instances
-                        if len(instance.list_of_tasks) == 0 and task.requested_core <= instance.core_capacity and task.requested_memory <= instance.memory_capacity:
-                            task.assigned = True
-                            instance.core_capacity -= task.requested_core
-                            instance.memory_capacity -= task.requested_memory
-                            instance.list_of_tasks.append(task)
-                            break
-                        # if no eligible instances then spin up new instance'
+                for instance in self.instance_bins[0]:
+                    #check for eligible instances
+                    if len(instance.list_of_tasks) == 0 and task.requested_core <= instance.core_capacity and task.requested_memory <= instance.memory_capacity:
+                        task.assigned = True
+                        instance.max_runtime = instance.get_max_runtime()
+                        instance.core_capacity -= task.requested_core
+                        instance.memory_capacity -= task.requested_memory
+                        instance.list_of_tasks.append(task)
+                        break
+                # if no eligible instances then spin up new instance'
                 else:
-                    new_instance = Instance(self.unique_id_pointer, instance.machine_id)
+                    new_instance = Instance(self.unique_id_pointer, self.unique_id_pointer % 35)
                     self.unique_id_pointer += 1
                     new_instance.list_of_tasks.append(task)
                     new_instance.max_runtime = new_instance.get_max_runtime()
                     new_instance.core_capacity -= task.requested_core
                     new_instance.memory_capacity -= task.requested_memory
                     
-                    self.instance_pool.append(new_instance)
-                    break
-                    
+                    self.instance_pool.append(new_instance)                    
+                    print(len(self.instance_pool))
     def baseline(self, total_time, interval) -> None:
         self.unique_id_pointer = 35
         
@@ -368,22 +365,26 @@ class Scheduler():
             self.average_baseline_memory_log.append(mem_sum / instance_pool_length)
             self.average_max_runtime_baseline_log.append(runtime_sum / instance_pool_length)
             self.number_of_instances_baseline_log.append(instance_pool_length)
-            # self.percentage_assigned_tasks_baseline_log.append(unassigned_tasks / total_tasks)
             
 def main() -> None:
     fourteen_days = 1209600
     test_duration = 20000
     interval = 1000
-    # machine = Instance(16)
     sched = Scheduler()
     
-    print("-----Running Stratus Algo-----")
-    sched.stratus(fourteen_days, interval)    
-    print("-----Finished Stratus Algo-----")
     
+    print("-----Running Stratus Algo-----")
+    tic1 = time.perf_counter()
+    sched.stratus(test_duration, interval)
+    toc1 = time.perf_counter()  
+    print("-----Finished Stratus Algo-----")
     print("-----Running Baseline Algo-----")
-    sched.baseline(fourteen_days, interval)
+    tic2 = time.perf_counter()
+    sched.baseline(test_duration, interval)
+    toc2 = time.perf_counter()
     print("-----Finished Baseline Algo-----")
+    print(f"-----Finished Stratus Algo in: {toc1 - tic1:0.4f} seconds -----")
+    print(f"-----Finished Baseline Algo in: {toc2 - tic2:0.4f} seconds -----")
     
     timestamp_array = [i for i in range(1, fourteen_days, interval)]
     
@@ -407,12 +408,6 @@ def main() -> None:
         writer = csv.writer(f)
         writer.writerow(["timestamp", "num_instances_baseline", "num_instances_stratus"])
         writer.writerows(zip(timestamp_array, sched.number_of_instances_baseline_log, sched.number_of_instances_stratus_log))
-        
-    # with open(f"../logging/pct_unassigned_tasks.csv", "w") as f:
-    #     writer = csv.writer(f)
-    #     writer.writerow(["timestamp", "pct_unassigned_baseline", "pct_unassigned_stratus"])
-    #     writer.writerows(zip(timestamp_array, sched.percentage_assigned_tasks_baseline_log, sched.percentage_assigned_tasks_stratus_log))
-        
     print("-----Finished Writing to CSV-----")    
 if __name__ == "__main__":
     main()
