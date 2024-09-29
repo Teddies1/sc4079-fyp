@@ -65,10 +65,11 @@ class Scheduler():
             instance.max_runtime = instance.get_max_runtime()
             if algo == "stratus":
                 runtime_bin_index = self.obtain_bin_index(self.instance_bins, instance.max_runtime)
-            elif algo == "baseline":
+                self.instance_bins[runtime_bin_index].append(instance)
+            elif algo == "baseline": 
                 runtime_bin_index = 0
-            # runtime_bin_index = instance.machine_id % len(self.instance_bins)
-            self.instance_bins[runtime_bin_index].append(instance)
+                if len(instance.list_of_tasks) == 0:
+                    self.instance_bins[runtime_bin_index].append(instance)
             
     def free_expired_tasks_and_instances_stratus(self, timestamp) -> None:
         for instance in self.instance_pool:
@@ -84,9 +85,11 @@ class Scheduler():
             
     def free_expired_tasks_and_instances_baseline(self, timestamp) -> None:    
         for instance in self.instance_pool:
-            instance.list_of_tasks.sort(key=lambda x: x.end_time)
+            # instance.list_of_tasks.sort(key=lambda x: x.end_time)
             instance.list_of_tasks[:] = [task for task in instance.list_of_tasks if task.end_time > timestamp]
-                
+        
+        self.instance_pool[:] = [instance for instance in self.instance_pool if len(instance.list_of_tasks) > 0]
+        
         self.task_bins[0][:] = [task for task in self.task_bins[0] if task.end_time > timestamp]
         self.task_bins[0][:] = [task for task in self.task_bins[0] if task.assigned == False]
     
@@ -309,25 +312,26 @@ class Scheduler():
         
         for task in self.task_bins[0]:
             if task.assigned == False:
-                for instance in self.instance_bins[0]:
-                    #check for eligible instances
-                    if len(instance.list_of_tasks) == 0 and task.requested_core <= instance.core_capacity and task.requested_memory <= instance.memory_capacity:
-                        task.assigned = True
-                        instance.core_capacity -= task.requested_core
-                        instance.memory_capacity -= task.requested_memory
-                        instance.list_of_tasks.append(task)
-                        break
-                    # if no eligible instances then spin up new instance'
-                    else:
-                        new_instance = Instance(self.unique_id_pointer, instance.machine_id)
-                        self.unique_id_pointer += 1
-                        new_instance.list_of_tasks.append(task)
-                        new_instance.max_runtime = new_instance.get_max_runtime()
-                        new_instance.core_capacity -= task.requested_core
-                        new_instance.memory_capacity -= task.requested_memory
-                        
-                        self.instance_pool.append(new_instance)
-                        break
+                if len(self.instance_bins[0]) > 0:
+                    for instance in self.instance_bins[0]:
+                        #check for eligible instances
+                        if len(instance.list_of_tasks) == 0 and task.requested_core <= instance.core_capacity and task.requested_memory <= instance.memory_capacity:
+                            task.assigned = True
+                            instance.core_capacity -= task.requested_core
+                            instance.memory_capacity -= task.requested_memory
+                            instance.list_of_tasks.append(task)
+                            break
+                        # if no eligible instances then spin up new instance'
+                else:
+                    new_instance = Instance(self.unique_id_pointer, instance.machine_id)
+                    self.unique_id_pointer += 1
+                    new_instance.list_of_tasks.append(task)
+                    new_instance.max_runtime = new_instance.get_max_runtime()
+                    new_instance.core_capacity -= task.requested_core
+                    new_instance.memory_capacity -= task.requested_memory
+                    
+                    self.instance_pool.append(new_instance)
+                    break
                     
     def baseline(self, total_time, interval) -> None:
         self.unique_id_pointer = 35
