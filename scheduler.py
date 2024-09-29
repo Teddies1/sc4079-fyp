@@ -74,12 +74,9 @@ class Scheduler():
         for instance in self.instance_pool:
             instance.list_of_tasks.sort(key=lambda x: x.end_time)
             instance.list_of_tasks[:] = [task for task in instance.list_of_tasks if task.end_time > timestamp]
-            
-        for bin in self.instance_bins:
-            for instance in bin:
-                if len(instance.list_of_tasks) == 0:
-                    instance_unique_id = instance.unique_id
-                    self.instance_pool[:] = [instance for instance in self.instance_pool if instance.unique_id != instance_unique_id]
+            if len(instance.list_of_tasks) == 0:
+                instance_unique_id = instance.unique_id
+                self.instance_pool[:] = [instance for instance in self.instance_pool if instance.unique_id != instance_unique_id]
                     
         for bin in self.task_bins:
             bin[:] = [task for task in bin if task.end_time > timestamp]
@@ -89,13 +86,7 @@ class Scheduler():
         for instance in self.instance_pool:
             instance.list_of_tasks.sort(key=lambda x: x.end_time)
             instance.list_of_tasks[:] = [task for task in instance.list_of_tasks if task.end_time > timestamp]
-        
-        # self.instance_bins[0].sort(key=lambda x: len(x.list_of_tasks))
-        # for instance in self.instance_bins[0]:
-        #     if len(instance.list_of_tasks) == 0:
-        #         instance_unique_id = instance.unique_id
-        #         self.instance_pool[:] = [instance for instance in self.instance_pool if instance.unique_id != instance_unique_id]
-        
+                
         self.task_bins[0][:] = [task for task in self.task_bins[0] if task.end_time > timestamp]
         self.task_bins[0][:] = [task for task in self.task_bins[0] if task.assigned == False]
     
@@ -299,27 +290,12 @@ class Scheduler():
                     
             self.packer(list_of_tasks=self.task_queue)    
             self.scaling()          
-            
-            # unassigned_tasks = 0
-            # total_tasks = 0
-            # for bin in self.task_bins:
-            #     for task in bin:
-            #         if task.assigned == True:
-            #             unassigned_tasks += 1
-            #         total_tasks += 1
-            # print(unassigned_tasks, total_tasks)
-            
             self.free_expired_tasks_and_instances_stratus(i)
             
-            core_sum = 0
-            mem_sum = 0
-            runtime_sum = 0
             instance_pool_length = len(self.instance_pool)
-            
-            for instance in self.instance_pool:
-                core_sum += 1 - instance.core_capacity
-                mem_sum += 1 - instance.memory_capacity
-                runtime_sum += instance.max_runtime
+            core_sum = sum((1-instance.core_capacity) for instance in self.instance_pool)
+            mem_sum = sum((1-instance.memory_capacity) for instance in self.instance_pool)
+            runtime_sum = sum(instance.max_runtime for instance in self.instance_pool)
                 
             self.average_stratus_core_log.append(core_sum / instance_pool_length)
             self.average_stratus_memory_log.append(mem_sum / instance_pool_length)
@@ -336,7 +312,6 @@ class Scheduler():
                 for instance in self.instance_bins[0]:
                     #check for eligible instances
                     if len(instance.list_of_tasks) == 0 and task.requested_core <= instance.core_capacity and task.requested_memory <= instance.memory_capacity:
-                        # print("test1")
                         task.assigned = True
                         instance.core_capacity -= task.requested_core
                         instance.memory_capacity -= task.requested_memory
@@ -344,7 +319,6 @@ class Scheduler():
                         break
                     # if no eligible instances then spin up new instance'
                     else:
-                        # print("test2")
                         new_instance = Instance(self.unique_id_pointer, instance.machine_id)
                         self.unique_id_pointer += 1
                         new_instance.list_of_tasks.append(task)
@@ -354,7 +328,6 @@ class Scheduler():
                         
                         self.instance_pool.append(new_instance)
                         break
-                
                     
     def baseline(self, total_time, interval) -> None:
         self.unique_id_pointer = 35
@@ -400,12 +373,12 @@ def main() -> None:
     # machine = Instance(16)
     sched = Scheduler()
     
-    # print("-----Running Stratus Algo-----")
-    # sched.stratus(fourteen_days, interval)    
-    # print("-----Finished Stratus Algo-----")
+    print("-----Running Stratus Algo-----")
+    sched.stratus(fourteen_days, interval)    
+    print("-----Finished Stratus Algo-----")
     
     print("-----Running Baseline Algo-----")
-    sched.baseline(test_duration, interval)
+    sched.baseline(fourteen_days, interval)
     print("-----Finished Baseline Algo-----")
     
     timestamp_array = [i for i in range(1, fourteen_days, interval)]
