@@ -75,6 +75,11 @@ class Scheduler():
     def free_expired_tasks_and_instances_stratus(self, timestamp) -> None:
         for instance in self.instance_pool:
             instance.list_of_tasks.sort(key=lambda x: x.end_time)
+            for task in instance.list_of_tasks:
+                if task.end_time <= timestamp:
+                    if instance.core_capacity + task.requested_core <= 1 and instance.memory_capacity + task.requested_memory <= 1:
+                        instance.core_capacity += task.requested_core
+                        instance.memory_capacity += task.requested_memory
             instance.list_of_tasks[:] = [task for task in instance.list_of_tasks if task.end_time > timestamp]
             if len(instance.list_of_tasks) == 0:
                 instance_unique_id = instance.unique_id
@@ -88,6 +93,8 @@ class Scheduler():
         for instance in self.instance_pool:
             instance.list_of_tasks[:] = [task for task in instance.list_of_tasks if task.end_time > timestamp]
         
+        self.instance_pool[:] = [instance for instance in self.instance_pool if len(instance.list_of_tasks) > 0]
+        print("instance pool size after freeing: ", len(self.instance_pool))
         self.task_bins[0][:] = [task for task in self.task_bins[0] if task.end_time > timestamp]
         self.task_bins[0][:] = [task for task in self.task_bins[0] if task.assigned == False]
     
@@ -306,33 +313,23 @@ class Scheduler():
             
     def baseline_algo(self, list_of_tasks) -> None:
         self.load_tasks_to_bins(list_of_tasks, "baseline")
-        self.update_instance_bins("baseline")
         
         for task in self.task_bins[0]:
             if task.assigned == False:
-                for instance in self.instance_bins[0]:
-                    #check for eligible instances
-                    if len(instance.list_of_tasks) == 0 and task.requested_core <= instance.core_capacity and task.requested_memory <= instance.memory_capacity:
-                        task.assigned = True
-                        instance.max_runtime = instance.get_max_runtime()
-                        instance.core_capacity -= task.requested_core
-                        instance.memory_capacity -= task.requested_memory
-                        instance.list_of_tasks.append(task)
-                        break
-                # if no eligible instances then spin up new instance'
-                else:
-                    new_instance = Instance(self.unique_id_pointer, self.unique_id_pointer % 35)
-                    self.unique_id_pointer += 1
-                    new_instance.list_of_tasks.append(task)
-                    new_instance.max_runtime = new_instance.get_max_runtime()
-                    new_instance.core_capacity -= task.requested_core
-                    new_instance.memory_capacity -= task.requested_memory
-                    
-                    self.instance_pool.append(new_instance)                    
-                    print(len(self.instance_pool))
+                new_instance = Instance(self.unique_id_pointer, self.unique_id_pointer % 35)
+                self.unique_id_pointer += 1
+                new_instance.list_of_tasks.append(task)
+                new_instance.max_runtime = new_instance.get_max_runtime()
+                new_instance.core_capacity -= task.requested_core
+                new_instance.memory_capacity -= task.requested_memory
+                
+                self.instance_pool.append(new_instance)     
+                
+        print("instance pool size before freeing: ", len(self.instance_pool))               
     def baseline(self, total_time, interval) -> None:
-        self.unique_id_pointer = 35
+        self.unique_id_pointer = 0
         
+        self.instance_pool = []
         self.instance_bins = [[]]
         self.task_bins = [[]]
         
@@ -368,7 +365,7 @@ class Scheduler():
             
 def main() -> None:
     fourteen_days = 1209600
-    test_duration = 20000
+    test_duration = 50000
     interval = 1000
     sched = Scheduler()
     
