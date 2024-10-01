@@ -81,10 +81,9 @@ class Scheduler():
                         instance.core_capacity += task.requested_core
                         instance.memory_capacity += task.requested_memory
             instance.list_of_tasks[:] = [task for task in instance.list_of_tasks if task.end_time > timestamp]
-            if len(instance.list_of_tasks) == 0:
-                instance_unique_id = instance.unique_id
-                self.instance_pool[:] = [instance for instance in self.instance_pool if instance.unique_id != instance_unique_id]
-                    
+            
+        self.instance_pool[:] = [instance for instance in self.instance_pool if len(instance.list_of_tasks) > 0]
+
         for bin in self.task_bins:
             bin[:] = [task for task in bin if task.end_time > timestamp]
             bin[:] = [task for task in bin if task.assigned == False]
@@ -294,7 +293,7 @@ class Scheduler():
         self.number_of_instances_stratus_log = []
         
         for i in range(1, total_time, interval):
-            print("Current timestamp is: ", i)
+            print("Current Stratus timestamp is: ", i)
             self.task_queue = []
             
             while task_csv_pointer < len(task_csv) and task_csv.loc[task_csv_pointer]['starttime'] <= i:
@@ -347,7 +346,7 @@ class Scheduler():
         self.number_of_instances_baseline_log = []
         
         for i in range(1, total_time, interval):
-            print("Current timestamp is: ", i)
+            print("Current baseline timestamp is: ", i)
             self.task_queue = []
             
             while task_csv_pointer < len(task_csv) and task_csv.loc[task_csv_pointer]['starttime'] <= i:
