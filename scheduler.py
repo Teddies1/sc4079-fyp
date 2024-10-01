@@ -94,7 +94,7 @@ class Scheduler():
             instance.list_of_tasks[:] = [task for task in instance.list_of_tasks if task.end_time > timestamp]
         
         self.instance_pool[:] = [instance for instance in self.instance_pool if len(instance.list_of_tasks) > 0]
-        print("instance pool size after freeing: ", len(self.instance_pool))
+        
         self.task_bins[0][:] = [task for task in self.task_bins[0] if task.end_time > timestamp]
         self.task_bins[0][:] = [task for task in self.task_bins[0] if task.assigned == False]
     
@@ -195,12 +195,18 @@ class Scheduler():
         # get max instance runtime, cpu and memory capacity
         max_runtime_instance = max(self.instance_pool, key=lambda x: x.max_runtime)
         scaler_max_runtime = max_runtime_instance.max_runtime
-        
+        min_runtime_instance = min(self.instance_pool, key=lambda x: x.max_runtime)
+        scaler_min_runtime = min_runtime_instance.max_runtime
         # get min instance cpu and memory capacity
         min_cpu_instance = min(self.instance_pool, key=lambda x: x.core_capacity)
         scaler_min_cpu = min_cpu_instance.core_capacity
         min_memory_instance = min(self.instance_pool, key=lambda x: x.memory_capacity)
         scaler_min_memory = min_memory_instance.memory_capacity
+        
+        max_cpu_instance = max(self.instance_pool, key=lambda x: x.core_capacity)
+        scaler_max_cpu = max_cpu_instance.core_capacity
+        max_memory_instance = max(self.instance_pool, key=lambda x: x.memory_capacity)
+        scaler_max_memory = max_memory_instance.memory_capacity        
         
         for i in range(len(self.task_bins)-1, -1, -1):
             for task in self.task_bins[i]:
@@ -248,16 +254,15 @@ class Scheduler():
                 memory_ratio = group[2]
                 constraining_resource = min(cpu_ratio, memory_ratio)
                 if cpu_ratio < memory_ratio:
-                    normalised_constraining_resouce = constraining_resource / scaler_min_cpu
+                    normalised_constraining_resouce = (constraining_resource - scaler_min_cpu) / (scaler_max_cpu - scaler_min_cpu)
                 else:
-                    normalised_constraining_resouce = constraining_resource / scaler_min_memory
+                    normalised_constraining_resouce = (constraining_resource - scaler_min_memory) / (scaler_max_memory - scaler_min_memory)
                 # note: since cost is proportional to runtime, we use normalised runtime for our cost
-                normalised_runtime = instance.max_runtime / scaler_max_runtime
+                normalised_runtime = (instance.max_runtime - scaler_min_runtime)/ (scaler_max_runtime - scaler_min_runtime)
                 if normalised_runtime > 0:
                     score = normalised_constraining_resouce / normalised_runtime
                 else:
                     score = 0
-                
                 if score > max_efficiency_score:
                     max_efficiency_score = score
                     max_candidate_instance_group = candidate_instance_group
@@ -325,7 +330,6 @@ class Scheduler():
                 
                 self.instance_pool.append(new_instance)     
                 
-        print("instance pool size before freeing: ", len(self.instance_pool))               
     def baseline(self, total_time, interval) -> None:
         self.unique_id_pointer = 0
         
@@ -372,12 +376,12 @@ def main() -> None:
     
     print("-----Running Stratus Algo-----")
     tic1 = time.perf_counter()
-    sched.stratus(test_duration, interval)
+    sched.stratus(fourteen_days, interval)
     toc1 = time.perf_counter()  
     print("-----Finished Stratus Algo-----")
     print("-----Running Baseline Algo-----")
     tic2 = time.perf_counter()
-    sched.baseline(test_duration, interval)
+    sched.baseline(fourteen_days, interval)
     toc2 = time.perf_counter()
     print("-----Finished Baseline Algo-----")
     print(f"-----Finished Stratus Algo in: {toc1 - tic1:0.4f} seconds -----")
