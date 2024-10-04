@@ -15,21 +15,6 @@ class Scheduler():
     stratus_logging_list: list
     baseline_logging_list: list
     
-    average_stratus_core_log: list[float]
-    average_stratus_memory_log: list[float]
-    
-    average_baseline_core_log: list[float]
-    average_baseline_memory_log: list[float]
-    
-    number_of_instances_stratus_log: list[int]
-    number_of_instances_baseline_log: list[int]
-    
-    percentage_assigned_tasks_stratus_log: list[float]
-    percentage_assigned_tasks_baseline_log: list[float]
-    
-    average_max_runtime_stratus_log: list[float]
-    average_max_runtime_baseline_log: list[float]
-    
     no_of_bins = math.floor(math.log(1209600, 2)) + 1
     instance_pool_size = 35
     unique_id_pointer = 35
@@ -78,7 +63,7 @@ class Scheduler():
                     
     def free_expired_tasks_and_instances_stratus(self, timestamp) -> None:
         print("free stratus")
-        
+
         for instance in self.instance_pool:
             instance.list_of_tasks.sort(key=lambda x: x.end_time)
             for task in instance.list_of_tasks:
